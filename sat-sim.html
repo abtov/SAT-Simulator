@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAT Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1b4fd8;--blue-d:#1440ae;--ink:#1a1a1a;--mute:#5f6670;--line:#d5d9e0;--bg:#fff;--soft:#f3f5f9;--ok:#157a3e;--okbg:#e6f5ec;--bad:#b3261e;--badbg:#fdeceb;--warn:#b45309}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Georgia,"Times New Roman",serif;color:var(--ink);background:var(--bg);font-size:17px}
+button,input,select{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px}
+.ui{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{height:100%;display:flex;flex-direction:column}
+.btn{border:2px solid var(--blue);background:var(--blue);color:#fff;border-radius:999px;padding:9px 22px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--blue-d)}
+.btn.ghost{background:#fff;color:var(--blue)}
+.btn.ghost:hover{background:#eef2ff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+/* top bar */
+.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 22px;border-bottom:3px solid #222;background:#fff;gap:10px}
+.top .l b{display:block;font-size:16px}
+.top .l small{color:var(--mute);font-family:system-ui}
+.top .c{text-align:center;font-family:system-ui}
+.top .c .t{font-size:24px;font-weight:700;letter-spacing:.5px}
+.top .c button{background:none;border:1px solid var(--line);border-radius:999px;padding:2px 12px;cursor:pointer;margin-top:2px;color:var(--mute)}
+.top .r{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.tool{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600;color:#222}
+.tool:hover,.tool.on{background:#eef2ff;border-color:var(--blue);color:var(--blue)}
+.stripe{height:6px;background:repeating-linear-gradient(135deg,#222 0 10px,#fff 10px 16px,#e0457b 16px 26px,#fff 26px 32px,#2a8fe0 32px 42px,#fff 42px 48px)}
+/* main */
+.main{flex:1;display:flex;min-height:0}
+.pane{flex:1;overflow:auto;padding:26px 34px;min-width:0}
+.pane.left{border-right:2px solid #c3c8d1;background:#fff}
+.pane.solo{max-width:900px;margin:0 auto}
+.stim{line-height:1.6}
+.stim img,.stem img,.opt img{max-width:100%}
+.stim table{border-collapse:collapse;margin:10px 0}.stim td,.stim th{border:1px solid #999;padding:4px 10px}
+.qhead{display:flex;align-items:center;gap:10px;background:var(--soft);border-bottom:2px solid #222;padding:6px 10px;margin:-26px -34px 18px;font-family:system-ui}
+.qnum{background:#222;color:#fff;font-weight:700;padding:6px 12px;border-radius:2px}
+.flagbtn{border:none;background:none;cursor:pointer;font-weight:600;color:#333;padding:4px 8px;border-radius:6px}
+.flagbtn.on{color:#b3261e}.flagbtn:hover{background:#e6e9ef}
+.sp{flex:1}
+.qtimer{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mute)}
+.qtimer .bar{width:90px;height:8px;border-radius:5px;background:#dde1e8;overflow:hidden}
+.qtimer .bar i{display:block;height:100%;width:0;background:var(--blue)}
+.qtimer.over{color:var(--bad);font-weight:700}.qtimer.over .bar i{background:var(--bad)}
+.chip{background:#e8ecf4;border-radius:999px;padding:1px 9px;font-size:12px;color:#444;white-space:nowrap}
+.stem{line-height:1.6;margin-bottom:16px}
+.opt{display:flex;align-items:stretch;gap:8px;margin:10px 0}
+.opt .box{flex:1;display:flex;align-items:center;gap:14px;border:2px solid #333;border-radius:10px;padding:11px 14px;cursor:pointer;background:#fff}
+.opt .box:hover{background:#f4f7ff}
+.opt.sel .box{border-color:var(--blue);background:#eaf0ff;box-shadow:0 0 0 1px var(--blue)}
+.opt .let{width:30px;height:30px;border-radius:50%;border:2px solid #333;display:grid;place-items:center;font-weight:700;font-family:system-ui;flex:none}
+.opt.sel .let{background:var(--blue);border-color:var(--blue);color:#fff}
+.opt.gone .box{opacity:.45;text-decoration:line-through}
+.opt .x{width:34px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;display:none;font-weight:700}
+.elim .opt .x{display:block}
+.opt.right .box{border-color:var(--ok);background:var(--okbg)}.opt.right .let{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.wrong .box{border-color:var(--bad);background:var(--badbg)}.opt.wrong .let{background:var(--bad);border-color:var(--bad);color:#fff}
+.spr{font-family:system-ui}
+.spr input{font-size:22px;padding:10px 14px;border:2px solid #333;border-radius:10px;width:220px}
+.spr .hint{color:var(--mute);font-size:13px;margin-top:8px;line-height:1.5}
+.spr .prev{margin-top:10px;font-weight:600}
+.fb{margin-top:18px;padding:14px 16px;border-radius:10px;font-family:system-ui;line-height:1.55;font-size:15px}
+.fb.ok{background:var(--okbg);border:1px solid var(--ok)}.fb.no{background:var(--badbg);border:1px solid var(--bad)}
+.fb h4{margin:0 0 6px;font-size:16px}
+.fb .rat{margin-top:8px;font-family:Georgia,serif;font-size:15px}
+.checkrow{margin-top:18px}
+/* bottom */
+.bot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 22px;border-top:2px solid #cfd3da;background:#fff;font-family:system-ui}
+.bot .nm{font-weight:700}
+.qnavbtn{background:#222;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer}
+.bot .r{display:flex;gap:10px;justify-content:flex-end}
+/* modals */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:50;padding:18px}
+.modal{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:88vh;overflow:auto;padding:24px 28px;font-family:system-ui;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.modal h3{margin:0 0 4px}
+.grid{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.gq{width:46px;height:46px;border:2px dashed #888;border-radius:8px;background:#fff;font-weight:700;cursor:pointer;position:relative}
+.gq.ans{border:2px solid var(--blue);background:var(--blue);color:#fff}
+.gq.cur{outline:3px solid #222;outline-offset:2px}
+.gq .f{position:absolute;top:-8px;right:-6px;font-size:14px;color:#b3261e}
+.legend{display:flex;gap:18px;font-size:13px;color:var(--mute);flex-wrap:wrap}
+/* calculator */
+#calc{position:fixed;right:20px;top:92px;width:480px;height:520px;min-width:300px;min-height:300px;background:#fff;border:2px solid #222;border-radius:10px;z-index:40;display:none;flex-direction:column;resize:both;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+#calc .h{background:#222;color:#fff;padding:7px 12px;cursor:move;display:flex;justify-content:space-between;font-family:system-ui;font-weight:600;user-select:none}
+#calc .h span{cursor:pointer}
+#calcbody{flex:1;min-height:0}
+/* home */
+.home{max-width:860px;margin:0 auto;padding:36px 24px;font-family:system-ui;overflow:auto}
+.home h1{font-family:Georgia,serif;margin:0 0 6px;font-size:34px}
+.card{border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0;background:#fff}
+.card h3{margin:0 0 10px;font-size:16px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.row label{display:flex;gap:6px;align-items:center}
+.row input[type=number]{width:80px;padding:6px}
+table.t{border-collapse:collapse;width:100%;font-size:14px}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.no{background:var(--badbg);color:var(--bad)}.pill.na{background:#eee;color:#555}
+.muted{color:var(--mute)}
+.note{background:#fff8e5;border:1px solid #f0d58a;border-radius:10px;padding:10px 14px;font-size:14px;line-height:1.5}
+.big{font-size:40px;font-weight:700}
+.stats{display:flex;gap:16px;flex-wrap:wrap}.stats .card{flex:1;min-width:180px;margin:6px 0}
+.center{display:grid;place-items:center;height:100%;font-family:system-ui;text-align:center;padding:20px}
+.spin{width:38px;height:38px;border:4px solid #dde1e8;border-top-color:var(--blue);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 14px}
+@keyframes s{to{transform:rotate(360deg)}}
+@media(max-width:800px){.main{flex-direction:column;overflow:auto}.pane.left{border-right:0;border-bottom:2px solid #c3c8d1}.top{grid-template-columns:1fr}.top .r,.top .c{text-align:left;justify-content:flex-start}#calc{left:10px;right:10px;width:auto}}
+/* ===== landing page ===== */
+.site{--ink:#0d1636;--mute:#5a6482;--line:#dfe4f2;--ult:#3a4ff0;--ult-d:#2a3bd0;--tint:#eceffe;--hi:#ffc83d;--bg:#f4f6fc;--panel:#fff;--mid:#0d1636;--mid2:#1b2a75;--ok:#0f9d7a;--okbg:#e3f6f0;--bad:#d93a50;--badbg:#fdecef;
+  flex:1;overflow:auto;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.55}
+.site *{font-family:inherit}
+.site a{color:var(--ult)}
+.site .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+.nav{position:sticky;top:0;z-index:5;background:rgba(244,246,252,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:26px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.01em;margin-right:auto}
+.brand svg{width:28px;height:28px}
+.nav button.lnk{background:none;border:0;color:var(--mute);font-weight:600;cursor:pointer;padding:6px 2px}
+.nav button.lnk:hover{color:var(--ink)}
+.sbtn{border:0;background:var(--ult);color:#fff;font-weight:700;border-radius:10px;padding:11px 22px;cursor:pointer;font-size:16px;box-shadow:0 1px 0 rgba(14,19,48,.25)}
+.sbtn:hover{background:var(--ult-d)}
+.sbtn.sm{padding:8px 16px;font-size:15px}
+.sbtn.line{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.sbtn.line:hover{background:var(--ink);color:#fff}
+.sbtn.mini{padding:6px 12px;font-size:14px;font-weight:600;background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.sbtn.mini:hover{box-shadow:inset 0 0 0 1.5px var(--ult);color:var(--ult);background:#fff}
+.site :focus-visible{outline:3px solid var(--ult);outline-offset:2px;border-radius:6px}
+.hero{padding:64px 0 34px;background:linear-gradient(180deg,#e4e9ff 0,#f4f6fc 100%)}
+.hero h1{font-size:clamp(2.5rem,5.6vw,4.6rem);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin:0 0 20px;max-width:15em}
+.hero p.lead{font-size:1.2rem;color:var(--mute);max-width:36em;margin:0 0 28px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+.sheet{display:flex;gap:10px;margin-top:46px;align-items:stretch}
+.sheet .gap{width:14px;flex:none}
+.blk{background:var(--panel);border:1.5px solid var(--ink);border-radius:14px;padding:16px 16px 14px;min-width:0;transition:opacity .25s,border-color .25s,transform .25s;display:flex;flex-direction:column;gap:12px}
+.blk.dim{opacity:.38;border-color:var(--line)}
+.blk header{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:15px;line-height:1.25}
+.blk header span{color:var(--mute);font-weight:600;white-space:nowrap}
+.blk .dots{display:grid;gap:7px 7px;grid-template-columns:repeat(9,1fr);justify-items:center}
+.blk.math .dots{grid-template-columns:repeat(11,1fr)}
+.blk .dots i{width:100%;max-width:15px;aspect-ratio:1;border-radius:50%;border:1.5px solid #aab2c8;display:block}
+.blk .dots i.on{background:var(--ult);border-color:var(--ult)}
+.blk .dots i.mk{background:var(--hi);border-color:#b58f00}
+.blk footer{font-size:14px;color:var(--mute);font-weight:500}
+@media(prefers-reduced-motion:no-preference){.blk .dots i{animation:fillin .45s both;animation-delay:var(--d)}}
+@keyframes fillin{from{background:transparent;border-color:#aab2c8;transform:scale(.6)}60%{transform:scale(1.15)}}
+.sheetnote{margin:12px 2px 0;color:var(--mute);font-size:14px}
+.sect{padding:56px 0 8px;scroll-margin-top:64px}
+.sect h2{font-size:clamp(1.7rem,3vw,2.3rem);letter-spacing:-.025em;line-height:1.1;margin:0 0 8px;font-weight:800}
+.sect .sub{color:var(--mute);margin:0 0 26px;max-width:40em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 1px 2px rgba(14,19,48,.04)}
+.rowset{display:grid;grid-template-columns:230px 1fr;gap:10px 36px;padding:30px 32px;border-top:1px solid var(--line)}
+.rowset:first-child{border-top:0}
+.rowset h3{margin:0 0 4px;font-size:1.05rem;font-weight:700}
+.rowset .why{color:var(--mute);font-size:14.5px;margin:0}
+.segs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.seg{position:relative;display:block;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;background:#fff}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg b{display:block;font-size:1.02rem}
+.seg span{color:var(--mute);font-size:14px}
+.seg:hover{border-color:#b9c1dd}
+.seg:has(input:checked){border-color:var(--ult);background:var(--tint);box-shadow:inset 0 0 0 1px var(--ult)}
+.seg:has(input:checked) b::after{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--hi);border:1.5px solid #b58f00;margin-left:8px;vertical-align:middle}
+.seg:has(input:focus-visible){outline:3px solid var(--ult);outline-offset:2px}
+.check{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.check input{width:20px;height:20px;margin-top:3px;accent-color:var(--ult)}
+.check b{display:block}
+.check span{color:var(--mute);font-size:14.5px}
+.grp{margin-top:22px}
+.grp>b{display:block;margin-bottom:8px;font-size:15px}
+.flds{display:flex;gap:12px;flex-wrap:wrap}
+.fld{display:block;min-width:112px}
+.fld>span:first-child{display:block;font-size:13.5px;color:var(--mute);margin-bottom:4px;font-weight:600}
+.inp{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:0 12px}
+.inp:focus-within{border-color:var(--ult);box-shadow:0 0 0 3px var(--tint)}
+.inp input{border:0;outline:0;width:100%;padding:10px 0;font-size:1.05rem;font-weight:700;background:transparent;color:var(--ink);font-family:inherit}
+.inp em{font-style:normal;color:var(--mute);font-size:14px;margin-left:6px}
+.hint{color:var(--mute);font-size:13.5px;margin:12px 0 0;max-width:44em}
+.srcline{display:flex;gap:12px;flex-wrap:wrap}
+.srcline .seg{flex:1;min-width:210px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+.tag{background:var(--hi);color:var(--ink);font-weight:700;font-size:13px;padding:3px 10px;border-radius:999px}
+.aside{margin-top:16px;border-left:4px solid var(--hi);background:#fffbe9;padding:12px 16px;border-radius:0 10px 10px 0;font-size:14.5px;color:#3d3a2a}
+.aside code,.site code{background:rgba(14,19,48,.07);padding:1px 5px;border-radius:5px;font-size:13px}
+details.fmt{margin-top:10px;font-size:14px;color:var(--mute)}
+details.fmt summary{cursor:pointer;font-weight:600;color:var(--ink)}
+.startbar{display:flex;align-items:center;gap:18px;justify-content:space-between;padding:22px 32px;border-top:1px solid var(--line);background:#fafbff;border-radius:0 0 18px 18px;flex-wrap:wrap}
+.startbar p{margin:0;color:var(--mute);font-size:14.5px}
+.sbtn.big{font-size:18px;padding:14px 36px}
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
+.feat div{padding:20px 0;border-top:1px solid var(--line)}
+.feat b{display:block;font-size:1.08rem;margin-bottom:4px}
+.feat p{margin:0;color:var(--mute);max-width:30em}
+table.fmtt{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table.fmtt th,table.fmtt td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-size:15px}
+table.fmtt th{background:#fafbff;font-weight:700;color:var(--mute);font-size:14px}
+table.fmtt tr:last-child td{border-bottom:0}
+.foot{margin-top:64px;padding:40px 0 48px;background:var(--mid);color:#aab5e0;font-size:13.5px}
+@media(max-width:860px){.rowset{grid-template-columns:1fr;padding:24px 20px}.segs{grid-template-columns:1fr}.feat{grid-template-columns:1fr}.sheet{flex-wrap:wrap}.sheet .gap{display:none}.blk{flex:1 1 calc(50% - 10px)!important}.nav .lnk{display:none}.hero{padding-top:40px}.startbar{padding:20px}}
+.home h1{font-family:"Schibsted Grotesk",system-ui,sans-serif;letter-spacing:-.02em;font-weight:800}
+.home{font-family:"Schibsted Grotesk",system-ui,sans-serif}
+/* ===== results ===== */
+.rhero{background:radial-gradient(900px 380px at 88% -10%,#3b4fc4 0,transparent 62%),linear-gradient(160deg,#0d1636 0,#16236a 100%);color:#fff;padding:56px 0 48px}
+.rhero .wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center}
+.rhero .lbl{color:#b8c3f5;font-weight:600;margin-bottom:6px}
+.rhero .score{font-size:clamp(4.2rem,10vw,7.6rem);font-weight:800;letter-spacing:-.055em;line-height:.95}
+.rhero .score small{font-size:.26em;font-weight:600;color:#b8c3f5;letter-spacing:0;margin-left:12px}
+.rhero .rng{color:#d7defc;margin-top:10px;font-size:1.05rem}
+.rstats{display:flex;gap:36px;flex-wrap:wrap;margin-top:36px;padding-top:24px;border-top:1px solid rgba(255,255,255,.16)}
+.rstats b{display:block;font-size:1.55rem;letter-spacing:-.02em}
+.rstats span{color:#b8c3f5;font-size:14px}
+.sb{margin-bottom:26px}
+.sbh{display:flex;justify-content:space-between;align-items:baseline;font-weight:600;margin-bottom:8px}
+.sbh b{font-size:1.8rem;letter-spacing:-.03em}
+.track{height:12px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}
+.track .fill{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8d9bff,#ffc83d);transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+.sbf{display:flex;justify-content:space-between;color:#9fabe0;font-size:13px;margin-top:6px}
+.tipgrid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+.tipcol{padding:26px 28px}
+.tipcol h3{margin:0 0 2px;font-size:1.2rem;font-weight:800;letter-spacing:-.01em}
+.tipcol .sub2{margin:0 0 6px;color:var(--mute);font-size:14.5px}
+.tip{padding:18px 0 4px;border-top:1px solid var(--line);margin-top:14px}
+.tip .nm{font-weight:700;font-size:1.05rem}
+.tip .ms{font-size:13.5px;color:var(--bad);font-weight:600;margin-top:2px}
+.mbar{height:6px;border-radius:9px;background:#edf0f9;margin:8px 0 12px;overflow:hidden}
+.mbar i{display:block;height:100%;background:var(--bad);border-radius:9px}
+.tip p{margin:0 0 8px}
+.tip .try{color:var(--mute);font-size:14.5px}
+.tip .try b{color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.tile .nm{font-weight:700;margin-bottom:2px}
+.tile .rt{font-size:13.5px;color:var(--mute);margin-bottom:10px}
+.tile .v{font-size:2.1rem;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+.tile .v small{font-size:.5em;color:var(--mute);font-weight:600;letter-spacing:0}
+.pbar{height:8px;border-radius:9px;background:#edf0f9;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--ult);border-radius:9px}
+.pbar i.ok{background:var(--ok)}.pbar i.bad{background:var(--bad)}
+.site .pill.ok{background:var(--okbg);color:var(--ok)}.site .pill.no{background:var(--badbg);color:var(--bad)}.site .pill.na{background:#eceff7;color:#5a6482}
+table.fmtt.rv tr[data-rv]{cursor:pointer}table.fmtt.rv tr[data-rv]:hover td{background:#f6f8ff}
+.over{color:var(--bad);font-weight:700}
+.rnote{margin-bottom:12px}
+.rnote .aside{margin-top:0}
+.tbwrap{overflow-x:auto;border-radius:14px}
+@media(max-width:860px){.rhero .wrap{grid-template-columns:1fr;gap:34px}.tipgrid{grid-template-columns:1fr}.tipcol{padding:22px 20px}}
+/* ===== quick practice & progress ===== */
+.skgrp{margin-bottom:18px}
+.skgrp>b{display:block;margin-bottom:8px;font-size:15px}
+.chks{display:flex;flex-wrap:wrap;gap:8px}
+.chk{display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;background:#fff;font-size:14.5px;line-height:1.3}
+.chk:hover{border-color:#b9c1dd}
+.chk:has(input:checked){border-color:var(--ult);background:var(--tint)}
+.chk input{accent-color:var(--ult);width:16px;height:16px}
+.chips{max-width:640px;line-height:1.9;font-size:14.5px}
+.chips span{display:inline-block;background:var(--tint);border-radius:999px;padding:1px 10px;font-size:13px;margin:0 4px 0 0;font-weight:600;line-height:1.7}
+.prog{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:start}
+.wkc+.wkc{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+.wkc h3{margin:0 0 10px;font-size:1.05rem;font-weight:800}
+.wk{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:8px 0}
+.wk .pbar{width:90px;flex:none}
+@media(max-width:860px){.prog{grid-template-columns:1fr}}
+.nbk{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:22px;padding:20px 26px}
+.nbk h3{margin:0 0 2px;font-size:1.05rem;font-weight:800}
+.nbk p{margin:0;color:var(--mute);font-size:14.5px;max-width:34em}
+.nbk .tools{margin:0}
+mark.hl{background:#ffe27a;color:inherit;padding:0;border-radius:2px}
+.stim.hl-on{cursor:text}
+.stim.hl-on mark.hl{cursor:pointer}
+.rhero .lbl.sk{margin-bottom:14px}
+.rhero .skr{margin-bottom:16px}
+.rhero .skr .sbh{font-size:15px;margin-bottom:6px;gap:14px}
+.rhero .skr .sbh b{font-size:15px;letter-spacing:0;white-space:nowrap}
+.main{font-size:calc(17px*var(--fs,1))}
+.chipline{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0 0}
+.pillx{display:inline-flex;gap:6px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600;font-size:14.5px;color:var(--ink)}
+.pillx b{color:var(--ult)}
+.dash{display:grid;grid-template-columns:1fr 1.15fr;gap:22px;align-items:stretch}
+.today,.trend{padding:24px 26px}
+.today h4,.trend h4{margin:0 0 8px;font-size:1rem;font-weight:800}
+.today h4{margin-top:22px}
+.ringrow{display:flex;gap:18px;align-items:center}
+.ring{width:84px;height:84px;flex:none}
+.r1{font-size:1.1rem}.r1 b{font-size:1.7rem;letter-spacing:-.02em}
+.pl{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.pl b{display:block;font-size:15px}
+.pl span{display:block;color:var(--mute);font-size:13.5px}
+.chart{width:100%;height:auto;display:block}
+.ax{fill:var(--mute);font-size:11px;font-family:inherit}
+.h3s{margin:34px 0 4px;font-size:1.4rem;letter-spacing:-.02em;font-weight:800}
+.smsec h4{margin:22px 0 4px;font-size:1.05rem;font-weight:800}
+.smdn{margin:14px 0 8px;font-weight:600;color:var(--mute);font-size:14px}
+.smg{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:10px}
+.smt{display:flex;flex-direction:column;gap:7px;text-align:left;border:1px solid var(--line);border-left-width:4px;background:#fff;border-radius:12px;padding:11px 14px;cursor:pointer;font:inherit;color:inherit;transition:border-color .15s,box-shadow .15s}
+.smt:hover{border-color:var(--ult);box-shadow:0 2px 12px rgba(58,79,240,.14)}
+.smn{font-weight:700;font-size:14px;line-height:1.3}
+.smb{height:6px;background:#edf0f9;border-radius:9px;overflow:hidden;margin-top:auto}
+.smb i{display:block;height:100%;border-radius:9px}
+.smm{font-size:12.5px;color:var(--mute)}
+.smt.na{border-left-color:#c9d0e6}.smt.na .smb i{background:#c9d0e6}
+.smt.lo{border-left-color:var(--bad)}.smt.lo .smb i{background:var(--bad)}
+.smt.mid{border-left-color:var(--hi)}.smt.mid .smb i{background:var(--hi)}
+.smt.hi{border-left-color:var(--ok)}.smt.hi .smb i{background:var(--ok)}
+.legend3,.legend2{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-size:13px;color:var(--mute)}
+.legend3 i,.legend2 i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:#c9d0e6}
+.legend3 i.lo{background:var(--bad)}.legend3 i.mid{background:var(--hi)}.legend3 i.hi{background:var(--ok)}
+.legend2{margin-top:10px}
+.legend2 i.tk{width:14px;height:2px;border-radius:0;background:var(--ink);vertical-align:3px}
+.goals{margin-top:22px;padding:22px 26px;display:flex;gap:22px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.goals .tools{margin-top:0}
+.pacewrap{overflow-x:auto}
+.chart.pace{min-width:640px}
+.note2{margin:6px 0 0;color:var(--mute);font-size:14.5px;line-height:1.5}
+.delta{display:inline-block;margin-top:14px;padding:4px 14px;border-radius:99px;font-weight:700;font-size:14.5px}
+.delta.up{background:rgba(15,157,122,.25);color:#86f2d2}
+.delta.dn{background:rgba(217,58,80,.28);color:#ffb8c2}
+.rvtop{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.rvnav{display:flex;justify-content:space-between;gap:10px;margin-top:22px}
+@media(max-width:860px){.dash{grid-template-columns:1fr}.goals{align-items:stretch}}
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body,#app{height:auto!important;overflow:visible!important}
+  #app{display:block!important}
+  .site{overflow:visible!important}
+  .nav,.sbtn,.tools,#calc,.ov,.startbar{display:none!important}
+  .sect{padding-top:22px}
+  .panel,.tile,.tip,tr,.sb,.skr{break-inside:avoid}
+  .pacewrap{overflow:visible}
+}
+.gl{stroke:var(--line)}
+.rt{stroke:var(--line)}
+.rtx{fill:var(--ink)}
+.tg{stroke:var(--ink)}
+.dt{stroke:var(--panel)}
+.ax[data-t]{fill:#8a6a00;font-weight:700}
+.site .center{min-height:90vh}
+.nav button.lnk.thm{font-size:14.5px;white-space:nowrap}
+@media(max-width:860px){.nav button.lnk.thm{display:inline-block}}
+.resume{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin:28px 0 0;padding:16px 20px;background:var(--panel);border:1.5px solid var(--ult);border-radius:14px}
+.resume b{display:block}
+.resume span{color:var(--mute);font-size:14.5px}
+.resume .tools{margin:0}
+.toast{position:fixed;top:78px;left:50%;transform:translateX(-50%);background:#0d1636;color:#fff;font-family:system-ui,sans-serif;font-weight:700;padding:12px 24px;border-radius:999px;box-shadow:0 8px 30px rgba(0,0,0,.3);z-index:80}
+@media(prefers-reduced-motion:no-preference){.toast{animation:toastin .25s ease-out}}
+@keyframes toastin{from{opacity:0;margin-top:-8px}}
+.rsn{margin-top:16px}
+.rsn>b{display:block;margin-bottom:8px;font-size:14.5px}
+.rsrow{display:flex;flex-wrap:wrap;gap:8px}
+.rsc{border:1.5px solid #c9cfdd;background:#fff;border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer;font-weight:600;color:#222}
+.rsc:hover{border-color:var(--blue)}
+.rsc.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.top button:focus-visible,.bot button:focus-visible,.opt .box:focus-visible,.tool:focus-visible,.btn:focus-visible,.flagbtn:focus-visible,.qnavbtn:focus-visible,.rsc:focus-visible,.gq:focus-visible{outline:3px solid #1b4fd8;outline-offset:2px}
+@media screen{
+  html[data-theme=dark] .site{--ink:#eef1ff;--mute:#a4afdb;--line:#28335f;--tint:#1c2658;--bg:#0b1024;--panel:#131a38;--okbg:#0f3a30;--badbg:#431a26;--ok:#35c9a0;--bad:#ff6b82;color-scheme:dark}
+  html[data-theme=dark] .site a,html[data-theme=dark] .pillx b{color:#9aa8ff}
+  html[data-theme=dark] .hero{background:linear-gradient(180deg,#141c4a 0,#0b1024 100%)}
+  html[data-theme=dark] .nav{background:rgba(11,16,36,.92)}
+  html[data-theme=dark] .seg,html[data-theme=dark] .inp,html[data-theme=dark] .chk,html[data-theme=dark] .smt,html[data-theme=dark] .tile,html[data-theme=dark] .pillx,html[data-theme=dark] table.fmtt,html[data-theme=dark] .sbtn.mini,html[data-theme=dark] .sbtn.mini:hover,html[data-theme=dark] .card{background:var(--panel)}
+  html[data-theme=dark] .sbtn.mini:hover{color:#9aa8ff}
+  html[data-theme=dark] .startbar,html[data-theme=dark] table.fmtt th{background:#0f1530}
+  html[data-theme=dark] .pbar,html[data-theme=dark] .mbar,html[data-theme=dark] .smb{background:#222c58}
+  html[data-theme=dark] .aside{background:#2b2711;color:#e7dfb4}
+  html[data-theme=dark] .site .pill.na{background:#222c58;color:#a4afdb}
+  html[data-theme=dark] table.fmtt.rv tr[data-rv]:hover td{background:#18214a}
+  html[data-theme=dark] .blk .dots i{border-color:#4a5688}
+  html[data-theme=dark] .brand svg rect{fill:#3a4ff0}
+  html[data-theme=dark] .site code{background:rgba(255,255,255,.1)}
+  html[data-theme=dark] .ax[data-t]{fill:#ffc83d}
+  html[data-theme=dark] .seg:hover,html[data-theme=dark] .chk:hover{border-color:#4a5688}
+  html[data-theme=dark] .sbtn.line:hover{background:var(--ink);color:var(--bg)}
+  html[data-theme=dark] .inp input{color:var(--ink)}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="calc"><div class="h" id="calch"><div>Desmos Graphing Calculator</div><span id="calcx">✕</span></div><div id="calcbody"></div></div>
+<input type="file" id="importfile" accept=".json" style="display:none">
+
+<script>
+/* =========================================================
+   SAT SIMULATOR
+   Structure (digital SAT):
+     Reading & Writing : 2 modules x 27 Qs, 32 min each
+     Math              : 2 modules x 22 Qs, 35 min each
+   Module 2 is adaptive: difficulty depends on Module 1 score.
+   ========================================================= */
+
+// ---------- exam spec ----------
+const SPEC = {
+  rw:   { name:'Reading and Writing', minutes:32, perModule:27,
+          // approx. College Board content distribution per module of 27
+          dist:{CAS:8, INI:7, SEC:7, EOI:5},
+          domNames:{CAS:'Craft and Structure', INI:'Information and Ideas', SEC:'Standard English Conventions', EOI:'Expression of Ideas'},
+          test:1 },
+  math: { name:'Math', minutes:35, perModule:22,
+          dist:{H:8, P:8, Q:3, S:3},
+          domNames:{H:'Algebra', P:'Advanced Math', Q:'Problem-Solving and Data Analysis', S:'Geometry and Trigonometry'},
+          test:2 }
+};
+const API = 'https://qbank-api.collegeboard.org/msreportingquestionbank-prod/questionbank/digital';
+const DESMOS_SRC = 'https://www.desmos.com/api/v1.11/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6'; // Desmos' public demo key
+
+const DEF_TIMERS={long:120,grammar:35,vocab:35,rest:60,easy:35,med:60,hard:150};
+const CATS={long:'Long reading',grammar:'Grammar',vocab:'Vocabulary',rest:'Other R&W',easy:'Math · easy',med:'Math · medium',hard:'Math · hard'};
+// ---------- state ----------
+const ST = {
+  cfg:{ sections:'full', feedback:true, source:'auto', showQT:true, timers:Object.assign({},DEF_TIMERS) }, dropped:0, rawSample:null,
+  plan:[], mi:0, q:[], qi:0, ans:{}, flag:{}, elim:{}, checked:{}, qtime:{}, qStart:null,
+  modEnd:0, results:[], lists:{}, used:new Set(), sourceNote:'', elimOn:false, hideTimer:false, custom:null, tick:null, skillUse:{}
+};
+try{ const sv=JSON.parse(localStorage.getItem('satTimers')||'null'); if(sv) Object.keys(DEF_TIMERS).forEach(k=>{ if(+sv[k]>0) ST.cfg.timers[k]=+sv[k]; }); }catch(e){}
+function saveTimers(){ try{ localStorage.setItem('satTimers',JSON.stringify(ST.cfg.timers)); }catch(e){} }
+const HK='satHistory', SKK='satSkills', MK='satMissed', TG='satTags', SESSION='satSession';
+function ld(k,d){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?d:v; }catch(e){ return d; } }
+function sv(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+ST.quick=Object.assign({sec:'rw',n:10,off:[],dOff:[]},ld('satQuick',{}));
+if(!SPEC[ST.quick.sec]) ST.quick.sec='rw';
+if(!Array.isArray(ST.quick.off)) ST.quick.off=[];
+if(!Array.isArray(ST.quick.dOff)) ST.quick.dOff=[];
+function saveQuick(){ sv('satQuick',ST.quick); }
+const modMin=m=>m.minutes||SPEC[m.sec].minutes;
+function allKeys(sec){ return SK.filter(r=>r[1]===sec).map(r=>r[0]); }
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const fmt = s => { s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+function clean(html){ // strip scripts / inline handlers from remote HTML
+  const d=document.createElement('div'); d.innerHTML=html||'';
+  d.querySelectorAll('script,iframe,object,embed,link,style').forEach(n=>n.remove());
+  d.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{ if(/^on/i.test(a.name)||/^\s*javascript:/i.test(a.value)) n.removeAttribute(a.name); }));
+  return d.innerHTML;
+}
+
+// ---------- demo pool (ORIGINAL practice items, used only if the bank can't be reached) ----------
+// [key, section, domain, display name, matcher]  (order matters for matching)
+const SK=[
+ ['WIC','rw','CAS','Words in Context',/words in context|\bwic\b/],
+ ['TSP','rw','CAS','Text Structure and Purpose',/text structure|\btsp\b/],
+ ['CTC','rw','CAS','Cross-Text Connections',/cross-text|\bctc\b/],
+ ['CID','rw','INI','Central Ideas and Details',/central ideas|\bcid\b/],
+ ['COEQ','rw','INI','Command of Evidence: Quantitative',/quantitative/],
+ ['COET','rw','INI','Command of Evidence: Textual',/command of evidence|\bcoe\b/],
+ ['INF','rw','INI','Inferences',/inferences|\binf\b/],
+ ['BOU','rw','SEC','Boundaries',/boundaries|\bbou\b/],
+ ['FSS','rw','SEC','Form, Structure, and Sense',/form,? structure|\bfss\b/],
+ ['TRA','rw','EOI','Transitions',/transitions|\btra\b/],
+ ['SYN','rw','EOI','Rhetorical Synthesis',/rhetorical synthesis|\bsyn\b/],
+ // Math - Algebra
+ ['NLE','math','P','Nonlinear equations in 1 variable and systems of equations in 2 variables',/nonlinear equations|systems of equations in (two|2)/],
+ ['NLF','math','P','Nonlinear functions',/nonlinear functions/],
+ ['EQX','math','P','Equivalent expressions',/equivalent expressions/],
+ ['INEQ','math','H','Linear inequalities in 1 or 2 variables',/linear inequalities/],
+ ['SYS','math','H','Systems of 2 linear equations in 2 variables',/systems of (two|2) linear/],
+ ['LF','math','H','Linear functions',/linear functions/],
+ ['LE2','math','H','Linear equations in 2 variables',/linear equations in (two|2) variables/],
+ ['LE1','math','H','Linear equations in 1 variable',/linear equations in (one|1) variable/],
+ // Math - Problem-Solving and Data Analysis
+ ['RATIO','math','Q','Ratios, rates, proportional relationships, and units',/ratios|rates|proportional|\bunits\b/],
+ ['PCT','math','Q','Percentages',/percent/],
+ ['ONEV','math','Q','One-variable data: distributions and measures of center and spread',/one-variable data|one variable data|distributions/],
+ ['TWOV','math','Q','Two-variable data: models and scatterplots',/two-variable data|two variable data|scatterplot/],
+ ['PROB','math','Q','Probability and conditional probability',/probability/],
+ ['INFER','math','Q','Inference from sample statistics and margin of error',/inference|margin of error|sample statistics/],
+ ['CLAIM','math','Q','Evaluating statistical claims: observational studies and experiments',/evaluating statistical|observational|experiments/],
+ // Math - Geometry and Trigonometry
+ ['LAT','math','S','Lines, angles, and triangles',/lines, angles|angles, and triangles/],
+ ['RTT','math','S','Right triangles and trigonometry',/right triangles|trigonometry/],
+ ['CIRC','math','S','Circles',/circles/],
+ ['AV','math','S','Area and volume',/area and volume|\barea\b|\bvolume\b/]
+];
+const SKN=Object.fromEntries(SK.map(r=>[r[0],r[3]]));
+function skillKey(text,sec){ const t=String(text||'').toLowerCase(); const f=SK.find(r=>r[1]===sec&&r[4].test(t)); return f?f[0]:undefined; }
+const SKT=q=>String(q.skill_desc||q.skillDesc||'')+' '+String(q.skill_cd||q.skillCd||'');
+// Per-module skill counts [key, min, max], following the domain/skill blueprint
+const MODSPEC={
+  rw:{ CAS:[['WIC',3,4],['TSP',2,3],['CTC',1,2]],
+       INI:[['CID',2,3],['COET',1,2],['COEQ',1,2],['INF',2,3]],
+       SEC:[['BOU',3,4],['FSS',3,4]],
+       EOI:[['TRA',2,3],['SYN',2,3]] },
+  math:{ H:[['LE1',1,2],['LE2',1,2],['LF',1,2],['SYS',1,2],['INEQ',1,2]],
+         P:[['EQX',2,3],['NLE',2,3],['NLF',2,3]],
+         Q:['RATIO','PCT','ONEV','TWOV','PROB','INFER','CLAIM'].map(k=>[k,0,1]),
+         S:['AV','LAT','RTT','CIRC'].map(k=>[k,0,1]) }
+};
+const DEMO_SKILLS=['Words in Context','Central Ideas and Details','Form, Structure, and Sense','Transitions','Boundaries','Words in Context','Linear equations in one variable','Nonlinear equations in one variable','One-variable data','Right triangles and trigonometry','Linear functions','Nonlinear functions'];
+const DEMO = [
+ ['rw','CAS','M','mcq','','The researcher\'s conclusions were ______, supported by three independent experiments that produced the same result.',['tentative','corroborated','ambiguous','outdated'],[1],'"Corroborated" means confirmed by additional evidence, which fits the three matching experiments.'],
+ ['rw','INI','M','mcq','Dr. Lena Ortiz measured soil moisture at 40 backyard sites. Sites planted with native grasses retained about 30% more moisture than sites with turf lawns. Ortiz concluded that native grasses are better suited to drought-prone yards.','Which choice best states the main idea of the text?',['Soil moisture is difficult to measure in backyards.','Native-grass yards held more moisture, suggesting suitability for dry regions.','Turf lawns should be banned in all cities.','Ortiz studied only forty kinds of grass.'],[1],'The text reports a measured difference and the conclusion drawn from it.'],
+ ['rw','SEC','E','mcq','','The committee, which included teachers, parents, and students, ______ the new schedule last week.',['approve','approves','approved','have approving'],[2],'"Last week" requires the past tense, and the subject "committee" is singular.'],
+ ['rw','EOI','M','mcq','The bakery raised its starting wage in March. ______ employee turnover fell by half within six months.','Which transition best completes the text?',['Consequently,','For instance,','Nevertheless,','Meanwhile,'],[0],'The fall in turnover is a result of the wage increase, so a cause-and-effect transition is needed.'],
+ ['rw','SEC','H','mcq','','The orchestra performed three pieces ______ a symphony, a concerto, and a suite.',[':',',',';','—and'],[0],'A colon correctly introduces a list after a complete clause.'],
+ ['rw','CAS','H','mcq','','Her ______ prose, free of ornament, made even the most complex ideas easy to follow.',['ornate','spare','erratic','florid'],[1],'"Spare" matches "free of ornament"; "ornate" and "florid" contradict it.'],
+ ['math','H','E','mcq','','If 3x + 7 = 25, what is the value of x?',['4','6','8','10'],[1],'Subtract 7: 3x = 18, so x = 6.'],
+ ['math','P','M','spr','','What is the sum of the solutions to x² − 5x + 6 = 0?',[],['5'],'The solutions are 2 and 3, so the sum is 5 (also −b/a).'],
+ ['math','Q','M','spr','','The mean of five numbers is 12. Four of the numbers are 8, 10, 14, and 16. What is the fifth number?',[],['12'],'Total = 60; the four known sum to 48, so the fifth is 12.'],
+ ['math','S','M','mcq','','A right triangle has legs of length 9 and 12. What is the length of its hypotenuse?',['13','15','17','21'],[1],'9² + 12² = 225, so the hypotenuse is 15.'],
+ ['math','H','H','mcq','','A plumber charges a $45 fee plus $30 per hour. Which equation gives the total cost C, in dollars, for h hours?',['C = 45h + 30','C = 30h − 45','C = 45 + 30h','C = 75h'],[2],'Fixed fee 45 plus 30 per hour.'],
+ ['math','P','H','spr','','If f(x) = 2x² − 3, what is the value of f(4)?',[],['29'],'2(16) − 3 = 29.']
+].map((a,i)=>({id:'demo'+i,section:a[0],domain:a[1],diff:a[2],skill:DEMO_SKILLS[i],sk:skillKey(DEMO_SKILLS[i],a[0]),full:{type:a[3],stimulus:a[4],stem:a[5],options:a[6],correct:a[7],rationale:a[8]}}));
+
+// ---------- question bank access ----------
+async function post(path, body){
+  const r = await fetch(API+'/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function normDiff(v){ const s=String(v==null?'':v).trim().toLowerCase(); if(s==='1'||s[0]==='e') return 'E'; if(s==='3'||s[0]==='h') return 'H'; return 'M'; }
+async function getList(sec){
+  if(ST.lists[sec]) return ST.lists[sec];
+  let list=null;
+  if(ST.custom){ list=ST.custom.filter(q=>q.section===sec); if(list.length){ST.sourceNote='Imported question file';return ST.lists[sec]=list;} }
+  if(ST.cfg.source!=='demo'){
+    try{
+      const doms=Object.keys(SPEC[sec].dist);
+      const raw=await post('get-questions',{asmtEventId:99,test:SPEC[sec].test,domain:doms.join(',')});
+      const arr=Array.isArray(raw)?raw:(raw.questions||raw.data||[]);
+      list=arr.map(q=>({
+        id:q.external_id||q.externalId||q.questionId||q.id,
+        domain:q.primary_class_cd||q.domain||q.primaryClassCd,
+        diff:normDiff(q.difficulty), section:sec, meta:q, skill:SKT(q), sk:skillKey(SKT(q),sec)
+      })).filter(q=>q.id&&doms.includes(q.domain));
+      if(!list.length) throw new Error('empty list');
+      ST.sourceNote='College Board Question Bank (live)';
+    }catch(e){ list=null; console.warn('Question bank unavailable:',e); }
+  }
+  if(!list){ list=DEMO.filter(q=>q.section===sec); ST.sourceNote='Built-in DEMO items (College Board bank not reachable from this page — see note on home screen)'; }
+  return ST.lists[sec]=list;
+}
+function strip(h){ return String(h||'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim(); }
+function hasText(h){ return /<(img|math|table|svg)\b/i.test(h||'')||strip(h).length>0; }
+function pick(o,...ks){ for(const k of ks){ if(o&&o[k]!=null&&o[k]!=='') return o[k]; } return ''; }
+function category(q){
+  if(q.section==='math') return {E:'easy',M:'med',H:'hard'}[q.diff]||'med';
+  const s=((q.skill||'')+' '+q.domain).toLowerCase(), st=strip(q.stem).toLowerCase();
+  if(/words in context|\bwic\b/.test(s)||/most logical and precise word|precise word or phrase/.test(st)) return 'vocab';
+  if(q.domain==='SEC'||/boundaries|form, structure|form structure|\bbou\b|\bfss\b/.test(s)||/conventions of standard english/.test(st)) return 'grammar';
+  if(/quantitative|transitions|rhetorical synthesis|text structure|\btra\b|\bsyn\b|\btsp\b/.test(s)||/logical transition/.test(st)) return 'rest';
+  if(/central ideas|inferences|cross-text|command of evidence|\bcid\b|\binf\b|\bctc\b|\bcoe\b/.test(s)||q.domain==='INI') return 'long';
+  return 'rest';
+}
+async function getQ(item){
+  let q;
+  if(item.full){ q=Object.assign({id:item.id,domain:item.domain,diff:item.diff,section:item.section,skill:item.skill},item.full,{options:(item.full.options||[]).map(esc)}); }
+  else { const d=await post('get-question',{external_id:item.id}); if(!ST.rawSample) ST.rawSample=d; q=norm(d,item); }
+  q.sk=skillKey(q.skill,q.section)||inferSk(q);
+  if(q.sk==='COET'&&/uses data|data from the (table|graph|chart)|data in the (table|graph|chart)/i.test(strip(q.stem))) q.sk='COEQ';
+  q.skillName=q.sk?SKN[q.sk]:String(q.skill||'').trim();
+  q.cat=category(q); return q;
+}
+function inferSk(q){
+  if(q.section!=='rw') return undefined;
+  const st=strip(q.stem).toLowerCase(), sm=strip(q.stimulus).toLowerCase();
+  if(/most logical and precise word|precise word or phrase/.test(st)) return 'WIC';
+  if(/logical transition/.test(st)) return 'TRA';
+  if(/student wants to|the student's goal|notes/.test(st+' '+sm.slice(0,80))&&/(while researching|student has taken)/.test(sm)) return 'SYN';
+  if(/text 1/.test(sm)&&/text 2/.test(sm)) return 'CTC';
+  return undefined;
+}
+function norm(d,item){
+  if(Array.isArray(d)) d=d[0]||{};
+  d=d.question||d.data||d.result||d;
+  const stem=pick(d,'stem','prompt','question','questionText','question_text','body');
+  const stim=pick(d,'stimulus','passage','context','stimulus_html');
+  let opts=pick(d,'answerOptions','answer_options','options','choices');
+  if(!Array.isArray(opts)) opts=(opts&&typeof opts==='object')?Object.values(opts):[];
+  if(!opts.length) opts=Object.values(d).find(v=>Array.isArray(v)&&v.length>=2&&v.every(x=>x&&typeof x==='object'&&('content' in x||'text' in x)))||[];
+  const isSpr=String(d.type||d.questionType||'').toLowerCase().includes('spr')||opts.length<2;
+  const q={id:item.id,section:item.section,domain:item.domain,diff:item.diff,type:isSpr?'spr':'mcq',
+    skill:(String(item.skill||'').trim()||SKT(d)),
+    stimulus:clean(typeof stim==='string'?stim:''),stem:clean(typeof stem==='string'?stem:''),rationale:clean(String(pick(d,'rationale','explanation')||''))};
+  const rat=strip(q.rationale);
+  const srcs=[d.correct_answer,d.correctAnswer,d.keys,d.key,d.answer].filter(x=>x!=null&&x!=='').map(x=>[].concat(x));
+  q.correct=[];
+  if(!isSpr){
+    const cont=opts.map(o=>typeof o==='string'?o:(o.content||o.text||o.value||''));
+    const ids=opts.map((o,k)=>(o&&o.id!=null)?o.id:'ABCD'[k]);
+    q.options=cont.map(clean);
+    const toIdx=c=>{ const t=String(c).trim(); if(/^[A-Da-d]$/.test(t)) return 'ABCD'.indexOf(t.toUpperCase());
+      let j=ids.indexOf(c); if(j<0) j=ids.map(String).indexOf(t); if(j<0) j=cont.findIndex(x=>strip(x)===strip(t)); return j; };
+    for(const sr of srcs){ const idx=sr.map(toIdx).filter(i=>i>=0); if(idx.length){ q.correct=idx; break; } }
+    if(!q.correct.length){ const m=rat.match(/(?:choice|option)\s+([A-D])\s+is\s+(?:the\s+)?(?:best|correct)/i); if(m) q.correct=['ABCD'.indexOf(m[1].toUpperCase())]; }
+  } else {
+    q.options=[];
+    for(const sr of srcs){ const v=sr.map(x=>String(x).trim()).filter(Boolean); if(v.length){ q.correct=v; break; } }
+    if(!q.correct.length){ const m=rat.match(/correct answer is\s+(-?\d+(?:\.\d+)?(?:\/\d+)?)/i); if(m) q.correct=[m[1]]; }
+  }
+  return q;
+}
+function valid(q){
+  if(!hasText(q.stem)) return false;
+  if(!q.correct||!q.correct.length) return false;
+  if(q.type==='mcq') return q.options.length>=2&&q.options.every(hasText)&&q.correct.every(i=>i>=0&&i<q.options.length);
+  return !q.correct.some(c=>/^[A-D]$/i.test(c));
+}
+async function diagnose(){
+  const d=modal('<h3>Question bank diagnostics</h3><p>Working…</p>');
+  try{
+    const list=await getList('rw'); const it=rnd(list);
+    const raw=await post('get-question',{external_id:it.id});
+    const q=norm(raw,it);
+    d.querySelector('.modal').innerHTML=`<h3>Question bank diagnostics</h3><p><b>Source:</b> ${esc(ST.sourceNote)}</p><p><b>List item:</b></p><pre style="white-space:pre-wrap;font-size:12px;background:#f3f5f9;padding:8px;border-radius:8px">${esc(JSON.stringify(it.meta||it,null,1).slice(0,1500))}</pre>
+    <p><b>Raw question (truncated):</b></p><pre style="white-space:pre-wrap;font-size:12px;background:#f3f5f9;padding:8px;border-radius:8px;max-height:260px;overflow:auto">${esc(JSON.stringify(raw,null,1).slice(0,3500))}</pre>
+    <p><b>Parsed:</b> valid = <b>${valid(q)}</b>, type = ${q.type}, correct = ${esc(JSON.stringify(q.correct))}, category = ${category(q)}</p><button class="btn" data-act="close">Close</button>`;
+  }catch(e){ d.querySelector('.modal').innerHTML=`<h3>Question bank diagnostics</h3><p>Failed: ${esc(e.message)}</p><button class="btn" data-act="close">Close</button>`; }
+}
+function pickDifficulty(mix){ const r=Math.random(); return r<mix.E?'E':(r<mix.E+mix.M?'M':'H'); }
+async function fetchValid(it,list,m){
+  const tried=new Set(); let cur=it;
+  for(let a=0;a<6;a++){
+    tried.add(cur.id);
+    try{ const q=await getQ(cur); if(valid(q)) return q; ST.dropped++; console.warn('Skipped unparseable question',cur.id,q); }
+    catch(e){ ST.dropped++; console.warn('Fetch failed',cur.id,e); }
+    let alt=list.filter(x=>x.domain===it.domain&&it.sk&&x.sk===it.sk&&!tried.has(x.id)&&!ST.used.has(x.id));
+    if(!alt.length) alt=list.filter(x=>x.domain===it.domain&&!tried.has(x.id)&&!ST.used.has(x.id));
+    if(!alt.length) break;
+    cur=rnd(alt); ST.used.add(cur.id);
+  }
+  const dd=DEMO.filter(d=>d.section===m.sec&&(m.quick&&it.sk?d.sk===it.sk:d.domain===it.domain));
+  const fb=await getQ(rnd(dd.length?dd:DEMO.filter(d=>d.section===m.sec)));
+  fb.fallback=true; return fb;
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+// Reading & Writing is ordered by domain, then by skill, as on the digital SAT
+const RW_DOM=['CAS','INI','SEC','EOI'];
+const SKILL_RANK=[/words in context|\bwic\b/,/text structure|\btsp\b/,/cross-text|\bctc\b/,/central ideas|\bcid\b/,/command of evidence|\bcoe\b/,/inferences|\binf\b/,/boundaries|\bbou\b/,/form, structure|form structure|\bfss\b/,/rhetorical synthesis|\bsyn\b/,/transitions|\btra\b/];
+const RW_SKILL=['WIC','TSP','CTC','CID','COET','COEQ','INF','BOU','FSS','TRA','SYN'];
+function skillRankOld(q){ const s=String(q.skill||'').toLowerCase(); const i=SKILL_RANK.findIndex(r=>r.test(s)); if(i>=0) return i; return q.cat==='vocab'?0:q.cat==='grammar'?6:99; }
+// Real math modules climb from easy to hard only roughly, and topics are interleaved rather than grouped.
+// Each question gets its difficulty band plus random jitter, so neighbouring bands overlap a little.
+// Then runs of the same skill (or three in a row from one domain) are broken up.
+function orderMath(arr){
+  const band={E:0,M:1,H:2};
+  const a=arr.map(q=>({q,k:(band[q.diff]??1)+(Math.random()-.5)*1.15})).sort((x,y)=>x.k-y.k).map(x=>x.q);
+  const bad=(i)=>{ const q=a[i]; if(!q) return false; const p=a[i-1], pp=a[i-2];
+    if(p&&q.sk&&q.sk===p.sk) return true;
+    return !!(p&&pp&&q.domain&&q.domain===p.domain&&q.domain===pp.domain); };
+  for(let i=1;i<a.length;i++){
+    if(!bad(i)) continue;
+    for(let j=i+1;j<Math.min(a.length,i+5);j++){
+      [a[i],a[j]]=[a[j],a[i]];
+      if(!bad(i)&&!bad(j)&&!bad(j+1)) break;
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+  }
+  return a;
+}
+function orderModule(sec,out){
+  const sh=shuffle(out);
+  if(sec==='math') return orderMath(sh);
+  return sh.sort((a,b)=>RW_DOM.indexOf(a.domain)-RW_DOM.indexOf(b.domain)||((RW_SKILL.indexOf(a.sk)+1)||99)-((RW_SKILL.indexOf(b.sk)+1)||99));
+}
+// ~75% multiple choice / ~25% student-produced response (16 or 17 MC out of 22)
+async function enforceTypes(out,list){
+  const total=out.length, mc=Math.random()<.5?Math.floor(total*.75):Math.ceil(total*.75), sprT=total-mc;
+  const inMod=new Set(out.map(q=>q.id)), tried=new Set();
+  for(let tries=0;tries<45;tries++){
+    const spr=out.filter(q=>q.type==='spr').length; if(spr===sprT) return;
+    const need=spr>sprT?'mcq':'spr';
+    const ks=out.map((q,k)=>k).filter(k=>out[k].type!==need&&!out[k].fallback);
+    if(!ks.length) return;
+    const k=rnd(ks), q0=out[k];
+    const fresh=x=>!inMod.has(x.id)&&!tried.has(x.id);
+    let cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.sk&&x.sk===q0.sk&&x.diff===q0.diff);
+    if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.sk&&x.sk===q0.sk);
+    if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.diff===q0.diff);
+    if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain);
+    if(!cand.length) continue;
+    const it=rnd(cand); tried.add(it.id);
+    try{ const q=await getQ(it); if(valid(q)&&q.type===need){ out[k]=q; inMod.add(q.id); ST.used.add(q.id); } }catch(e){}
+  }
+}
+function allocate(specs,count){
+  const c={}; let sum=0; specs.forEach(([k,mn])=>{ c[k]=mn; sum+=mn; });
+  let rem=count-sum;
+  while(rem>0){
+    const cands=specs.filter(([k,mn,mx])=>c[k]<mx); if(!cands.length) break;
+    const lo=Math.min(...cands.map(([k])=>ST.skillUse[k]||0));
+    const k=rnd(cands.filter(([k])=>(ST.skillUse[k]||0)===lo))[0];
+    c[k]++; rem--;
+  }
+  return c;
+}
+async function buildModule(m){
+  const spec=SPEC[m.sec], list=await getList(m.sec), chosen=[];
+  for(const [dom,cnt] of Object.entries(spec.dist)){
+    const alloc=allocate(MODSPEC[m.sec][dom],cnt);
+    for(const [key,n] of Object.entries(alloc)){
+      for(let i=0;i<n;i++){
+        // prefer this skill, then items whose skill is unknown, then anything in the domain
+        const free=q=>q.domain===dom&&!chosen.includes(q);
+        let pool=list.filter(q=>free(q)&&q.sk===key&&!ST.used.has(q.id));
+        if(!pool.length) pool=list.filter(q=>free(q)&&q.sk===key);
+        if(!pool.length) pool=list.filter(q=>free(q)&&!q.sk&&!ST.used.has(q.id));
+        if(!pool.length) pool=list.filter(q=>free(q)&&!ST.used.has(q.id));
+        if(!pool.length) pool=list.filter(free);
+        if(!pool.length) pool=list.filter(q=>!chosen.includes(q));
+        if(!pool.length) pool=list.slice();
+        const want=pickDifficulty(m.mix);
+        const sub=pool.filter(q=>q.diff===want);
+        const p=rnd(sub.length?sub:pool);
+        chosen.push(p); ST.used.add(p.id);
+      }
+    }
+  }
+  const out=[]; let idx=0;
+  async function worker(){ while(idx<chosen.length){ const k=idx++; out[k]=await fetchValid(chosen[k],list,m); } }
+  await Promise.all(Array.from({length:6},worker));
+  if(m.sec==='math') await enforceTypes(out,list);
+  out.forEach(q=>{ if(q.sk) ST.skillUse[q.sk]=(ST.skillUse[q.sk]||0)+1; });
+  return orderModule(m.sec,out);
+}
+
+// ---------- grading ----------
+function num(s){ s=String(s).trim().replace(/\s+/g,''); if(/^-?\d*\.?\d+$/.test(s)) return parseFloat(s);
+  let m=s.match(/^(-?\d+)\/(\d+)$/); if(m&&+m[2]) return +m[1]/+m[2]; return null; }
+function isCorrect(q,a){
+  if(a===undefined||a===null||a==='') return false;
+  if(q.type==='mcq') return q.correct.includes(a);
+  const v=num(a);
+  return q.correct.some(c=>{const cv=num(c); return (v!==null&&cv!==null)?Math.abs(v-cv)<1e-6:String(a).trim()===String(c).trim();});
+}
+const answerText=q=>q.type==='mcq'?q.correct.map(i=>'ABCD'[i]).join(' or '):q.correct.join(' or ');
+
+// ---------- home ----------
+function weakList(sec){
+  const sks=ld(SKK,{});
+  return Object.keys(sks).filter(k=>{ const r=SK.find(x=>x[0]===k); return r&&r[1]===sec&&sks[k].n>=3&&sks[k].miss>0; })
+    .map(k=>({k,n:sks[k].n,miss:sks[k].miss,rate:sks[k].miss/sks[k].n})).sort((a,b)=>b.rate-a.rate||b.n-a.n).slice(0,3);
+}
+// ----- goals, streaks and charts -----
+const dkey=t=>t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+const PF=()=>Object.assign({goal:20,target:null,fs:100,theme:'auto'},ld('satPrefs',{}));
+function setPF(k,v){ const o=ld('satPrefs',{}); o[k]=v; sv('satPrefs',o); }
+function addDaily(n){ const d=ld('satDaily',{}), k=dkey(new Date()); d[k]=(d[k]||0)+n; const ks=Object.keys(d).sort(); ks.slice(0,Math.max(0,ks.length-120)).forEach(x=>{ delete d[x]; }); sv('satDaily',d); }
+function todayCount(){ return ld('satDaily',{})[dkey(new Date())]||0; }
+function streak(){ const d=ld('satDaily',{}), t=new Date(); if(!(d[dkey(t)]>0)) t.setDate(t.getDate()-1); let n=0; while(d[dkey(t)]>0){ n++; t.setDate(t.getDate()-1); } return n; }
+function todayChip(){ const pf=PF(), t=todayCount(), n=streak(); if(!t&&!n) return ''; return `<div class="chipline"><span class="pillx"><b>${t}</b> of ${pf.goal} questions today</span>${n?`<span class="pillx"><b>${n}</b>-day streak</span>`:''}</div>`; }
+function ring(p){ const C=2*Math.PI*34, f=Math.min(1,p)*C; return `<svg class="ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="rt" cx="40" cy="40" r="34" fill="none" stroke-width="9"/><circle cx="40" cy="40" r="34" fill="none" stroke="${p>=1?'#0f9d7a':'#3a4ff0'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${f.toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 40 40)"/><text class="rtx" x="40" y="45" text-anchor="middle" font-size="17" font-weight="800">${Math.round(Math.min(1,p)*100)}%</text></svg>`; }
+function lineChart(pts,target){
+  const W=520,H=210,L=46,R=18,T=16,B=30;
+  let lo=Math.min(...pts.map(q=>q.v),target||1e9), hi=Math.max(...pts.map(q=>q.v),target||0);
+  lo=Math.max(400,Math.floor((lo-50)/100)*100); hi=Math.min(1600,Math.ceil((hi+50)/100)*100);
+  if(hi-lo<200){ hi=Math.min(1600,lo+200); lo=Math.max(400,hi-200); }
+  const x=i=>L+i*(W-L-R)/(pts.length-1), y=v=>T+(hi-v)*(H-T-B)/(hi-lo);
+  let g=''; for(let k=0;k<=4;k++){ const v=lo+(hi-lo)*k/4; g+=`<line x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="gl"/><text class="ax" x="${L-8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`; }
+  const path=pts.map((q,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(q.v).toFixed(1)).join(' ');
+  const tl=target?`<line x1="${L}" x2="${W-R}" y1="${y(target).toFixed(1)}" y2="${y(target).toFixed(1)}" stroke="#ffc83d" stroke-width="2" stroke-dasharray="6 5"/><text class="ax" x="${W-R}" y="${(y(target)-6).toFixed(1)}" text-anchor="end" data-t="1">Target ${target}</text>`:'';
+  const dots=pts.map((q,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(q.v).toFixed(1)}" r="5" fill="#3a4ff0" class="dt" stroke-width="2"><title>${esc(q.label)}: ${q.v}</title></circle>`).join('');
+  const last=pts[pts.length-1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Estimated total score over time">${g}${tl}<path d="${path}" fill="none" stroke="#3a4ff0" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}<text class="ax" x="${x(0).toFixed(1)}" y="${H-8}">${esc(pts[0].label)}</text><text class="ax" x="${x(pts.length-1).toFixed(1)}" y="${H-8}" text-anchor="end">${esc(last.label)} · ${last.v}</text></svg>`;
+}
+function accChart(rows){
+  const W=520,H=190,L=38,R=8,T=12,B=28,n=rows.length,sl=(W-L-R)/n,bw=Math.min(34,sl-8),y=q=>T+(1-q)*(H-T-B);
+  let g=''; [0,.5,1].forEach(q=>{ g+=`<line x1="${L}" x2="${W-R}" y1="${y(q).toFixed(1)}" y2="${y(q).toFixed(1)}" class="gl"/><text class="ax" x="${L-6}" y="${(y(q)+4).toFixed(1)}" text-anchor="end">${q*100}%</text>`; });
+  const bars=rows.map((r,i)=>{ const x=L+i*sl+(sl-bw)/2, top=y(r.p), col=r.p>=.8?'#0f9d7a':r.p<.5?'#d93a50':'#3a4ff0'; return `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2,(H-B)-top).toFixed(1)}" rx="4" fill="${col}"><title>${esc(r.label)}</title></rect>`; }).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Accuracy by session">${g}${bars}<text class="ax" x="${L}" y="${H-8}">Oldest</text><text class="ax" x="${W-R}" y="${H-8}" text-anchor="end">Latest</text></svg>`;
+}
+function planItems(){
+  const out=[], nb=ld(MK,[]), cnt=x=>nb.filter(q=>q.section===x).length;
+  ['rw','math'].forEach(x=>{ if(cnt(x)) out.push({t:`Redo ${Math.min(15,cnt(x))} ${SPEC[x].name} mistakes`,d:'Questions you missed before',a:'nb:'+x}); });
+  ['rw','math'].forEach(x=>{ const w=weakList(x); if(w.length) out.push({t:`Practice your weakest ${SPEC[x].name} skills`,d:w.slice(0,2).map(o=>SKN[o.k]).join(', '),a:'weak:'+x}); });
+  if(!out.length) out.push({t:'Start with a 10-question quick set',d:'Choose a subject and see where you stand',a:'quick'});
+  return out.slice(0,3);
+}
+function progressHTML(){
+  const hist=ld(HK,[]), real=hist.filter(h=>!h.demo), pf=PF(), t=todayCount(), n=streak(), sks=ld(SKK,{});
+  const planHTML=planItems().map(o=>`<div class="pl"><div><b>${esc(o.t)}</b><span>${esc(o.d)}</span></div><button class="sbtn mini" data-plan="${o.a}" type="button">Start</button></div>`).join('');
+  const today=`<div class="panel today"><div class="ringrow">${ring(pf.goal?t/pf.goal:0)}<div><div class="r1"><b>${t}</b> of ${pf.goal} questions today</div><div class="muted">${n?`${n}-day streak. Keep it going.`:'Answer a question today to start a streak.'}</div></div></div><h4>Suggested next</h4>${planHTML}</div>`;
+  const totals=real.filter(h=>h.total!=null).slice(-10).map(h=>({v:h.total,label:new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}));
+  let trend;
+  if(totals.length>=2) trend=`<h4>Estimated total score</h4>${lineChart(totals,pf.target)}`;
+  else if(real.length) trend=`<h4>Accuracy by session</h4>${accChart(real.slice(-12).map(h=>({p:h.n?h.c/h.n:0,label:`${new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}: ${h.c}/${h.n} correct (${h.kind})`})))}<p class="hint" style="margin-top:6px">Finish two full tests to see your score trend.</p>`;
+  else trend=`<h4>Your trend</h4><p class="muted" style="margin:6px 0 0">Finish a test and your score or accuracy trend will show up here.</p>`;
+  const rows=hist.slice(-6).reverse().map(h=>{
+    const res=h.total!=null?`<b>${h.total}</b> <span class="muted">of 1600</span>`:(h.rw!=null||h.math!=null)?`<b>${h.rw!=null?h.rw:h.math}</b> <span class="muted">of 800</span>`:`<b>${h.c}/${h.n}</b> <span class="muted">correct</span>`;
+    return `<tr><td>${new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</td><td>${esc(h.kind)}${h.demo?' <span class="muted">(demo)</span>':''}</td><td>${res}</td><td>${fmt(h.avg)}</td></tr>`;
+  }).join('');
+  const histHTML=hist.length?`<div class="panel" style="padding:8px 22px"><table class="fmtt" style="border:0"><tr><th>Date</th><th>Test</th><th>Result</th><th>Avg time</th></tr>${rows}</table></div>`:'';
+  const wk=sec=>{ const l=weakList(sec); return `<div class="wkc"><h3>${SPEC[sec].name}</h3>${l.length?l.map(o=>`<div class="wk"><div><b>${esc(SKN[o.k])}</b><div class="muted" style="font-size:13px">Missed ${o.miss} of ${o.n} so far</div></div><div class="pbar"><i class="bad" style="width:${Math.round(o.rate*100)}%"></i></div></div>`).join('')+`<button class="sbtn mini" data-weak="${sec}" type="button" style="margin-top:10px">Practice these skills</button>`:'<p class="muted" style="margin:6px 0 0;font-size:14.5px">No weak spots yet. Skills show up here after you have seen at least three questions on them.</p>'}</div>`; };
+  const nb=ld(MK,[]), cnt=x=>nb.filter(q=>q.section===x).length, nbs=['rw','math'].filter(cnt);
+  const nbHTML=`<div class="panel nbk"><div><h3>Mistake notebook</h3><p>${nbs.length?'Every question you miss is saved here until you answer it correctly.':'Nothing saved. Questions you miss will be saved here until you answer them correctly.'}</p></div>${nbs.length?`<div class="tools">${nbs.map(x=>`<button class="sbtn mini" data-nb="${x}" type="button">Redo ${Math.min(15,cnt(x))} of ${cnt(x)} ${SPEC[x].name} mistake${cnt(x)>1?'s':''}</button>`).join('')}</div>`:''}</div>`;
+  const map=['rw','math'].map(sec=>`<div class="smsec"><h4>${SPEC[sec].name}</h4>${Object.keys(SPEC[sec].dist).map(d=>`<div class="smd"><div class="smdn">${SPEC[sec].domNames[d]}</div><div class="smg">${SK.filter(r=>r[1]===sec&&r[2]===d).map(r=>{
+    const o=sks[r[0]]||{n:0,miss:0}, q=o.n?(o.n-o.miss)/o.n:null, cls=q==null?'na':q<.5?'lo':q<.8?'mid':'hi';
+    return `<button class="smt ${cls}" data-skill="${r[0]}" type="button"><span class="smn">${esc(r[3])}</span><span class="smb"><i style="width:${q==null?0:Math.round(q*100)}%"></i></span><span class="smm">${q==null?'Not practiced yet':Math.round(q*100)+'% correct · '+o.n+' seen'}</span></button>`; }).join('')}</div></div>`).join('')}</div>`).join('');
+  const goals=`<div class="panel goals"><div class="flds"><label class="fld"><span>Target total score</span><span class="inp"><input type="number" id="gt" min="400" max="1600" step="10" value="${pf.target||''}" placeholder="1400"><em>of 1600</em></span></label><label class="fld"><span>Daily goal</span><span class="inp"><input type="number" id="gd" min="1" max="500" value="${pf.goal}"><em>questions</em></span></label></div>
+    <div class="tools"><button class="sbtn mini" id="exp" type="button">Export progress</button><button class="sbtn mini" id="imq" type="button">Import progress</button><button class="sbtn mini" id="clr" type="button">Clear saved progress</button></div></div>`;
+  return `<section class="sect" id="progress"><div class="wrap"><h2>Your progress</h2><p class="sub">Saved in this browser. Set a goal, keep a streak and see which skills need work.</p>
+    <div class="dash">${today}<div class="panel trend">${trend}</div></div>
+    <h3 class="h3s">Skill map</h3><p class="sub" style="margin-bottom:14px">Your accuracy on every skill. Select one for a tip and a 10-question set on just that skill.</p>
+    <div class="panel" style="padding:8px 26px 22px">${map}<div class="legend3"><span><i class="lo"></i>Under 50%</span><span><i class="mid"></i>50 to 79%</span><span><i class="hi"></i>80% and up</span><span><i class="na"></i>Not practiced</span></div></div>
+    <div class="prog" style="margin-top:22px">${histHTML||'<div></div>'}<div class="panel" style="padding:24px 26px">${wk('rw')}${wk('math')}</div></div>
+    ${nbHTML}${allReasonsHTML()}${goals}</div></section>`;
+}
+const PKEYS=[HK,SKK,MK,TG,'satDaily','satPrefs','satQuick','satTimers'];
+function exportProgress(){
+  const o={app:'sat-simulator',v:1,data:{}}; PKEYS.forEach(k=>{ const v=ld(k,null); if(v!=null) o.data[k]=v; });
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'})); a.download='sat-simulator-progress-'+dkey(new Date())+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+function importProgress(){
+  const i=document.createElement('input'); i.type='file'; i.accept='.json,application/json';
+  i.onchange=async()=>{ try{ const o=JSON.parse(await i.files[0].text()); if(o.app!=='sat-simulator'||!o.data) throw new Error('This is not a SAT Simulator progress file.');
+    if(!confirm('Replace your saved progress with the contents of this file?')) return;
+    PKEYS.forEach(k=>{ if(o.data[k]!==undefined) sv(k,o.data[k]); }); location.reload(); }catch(e){ alert('Could not import that file: '+e.message); } };
+  i.click();
+}
+function skillModal(k){
+  const r=SK.find(x=>x[0]===k); if(!r) return;
+  const o=ld(SKK,{})[k]||{n:0,miss:0}, tp=TIPS[k]||DOMTIPS[r[2]]||{t:'Review the explanations for questions you miss on this skill.',d:'Practice a few questions every day.'};
+  const d=modal(`<div class="muted">${esc(SPEC[r[1]].domNames[r[2]])} · ${esc(SPEC[r[1]].name)}</div><h3 style="margin:4px 0 10px">${esc(r[3])}</h3>
+    <p style="margin:0 0 12px">${o.n?`You have seen <b>${o.n}</b> question${o.n>1?'s':''} on this skill and missed <b>${o.miss}</b> (${Math.round((o.n-o.miss)/o.n*100)}% correct).`:'You have not practiced this skill yet.'}</p>
+    <p style="margin:0 0 8px"><b>How to approach it:</b> ${tp.t}</p><p style="margin:0 0 20px;color:#5a6482"><b style="color:#0d1636">Try this:</b> ${tp.d}</p>
+    <button class="btn" id="skgo" type="button">Practice 10 questions</button> <button class="btn ghost" data-act="close" type="button">Close</button>`);
+  d.querySelector('#skgo').onclick=()=>{ d.remove(); startSkills(r[1],[k]); };
+}
+function refreshProgress(){ const el=$('#progress'); if(!el||!el.parentNode) return; const t=document.createElement('div'); t.innerHTML=progressHTML(); el.replaceWith(t.firstElementChild); bindProgress(); }
+function bindProgress(){
+  document.querySelectorAll('[data-weak]').forEach(b=>b.onclick=()=>startWeak(b.dataset.weak));
+  document.querySelectorAll('[data-nb]').forEach(b=>b.onclick=()=>startNotebook(b.dataset.nb));
+  document.querySelectorAll('[data-skill]').forEach(b=>b.onclick=()=>skillModal(b.dataset.skill));
+  document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>{ const [a,x]=b.dataset.plan.split(':'); if(a==='nb') startNotebook(x); else if(a==='weak') startWeak(x); else { const el=document.getElementById(a==='quick'?'quick':'setup'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); } });
+  const gt=$('#gt'), gd=$('#gd');
+  if(gt) gt.onchange=()=>{ const v=Math.round(+gt.value); setPF('target',v>=400&&v<=1600?v:null); setTimeout(refreshProgress,0); };
+  if(gd) gd.onchange=()=>{ const v=Math.round(+gd.value); setPF('goal',v>=1&&v<=500?v:20); setTimeout(refreshProgress,0); };
+  const ex=$('#exp'); if(ex) ex.onclick=exportProgress;
+  const im=$('#imq'); if(im) im.onclick=importProgress;
+  const clr=$('#clr'); if(clr) clr.onclick=()=>{ if(confirm('Clear your saved test history, skill stats, mistake notebook and goals from this browser?')){ try{ PKEYS.filter(k=>k!=='satTimers'&&k!=='satQuick').forEach(k=>localStorage.removeItem(k)); }catch(e){} home(); } };
+}
+function renderQuick(){
+  const q=ST.quick, sec=q.sec;
+  $('#qskills').innerHTML=Object.keys(SPEC[sec].dist).map(d=>`<div class="skgrp"><b>${SPEC[sec].domNames[d]}</b><div class="chks">${SK.filter(r=>r[1]===sec&&r[2]===d).map(r=>`<label class="chk"><input type="checkbox" data-k="${r[0]}" ${q.off.includes(r[0])?'':'checked'}>${esc(r[3])}</label>`).join('')}</div></div>`).join('');
+  $('#qdiff').innerHTML=[['E','Easy'],['M','Medium'],['H','Hard']].map(([d,l])=>`<label class="chk"><input type="checkbox" data-d="${d}" ${q.dOff.includes(d)?'':'checked'}>${l}</label>`).join('');
+  updQ();
+}
+function updQ(){
+  const q=ST.quick, en=new Set(allKeys(q.sec).filter(k=>!q.off.includes(k))), ds=['E','M','H'].filter(d=>!q.dOff.includes(d)), el=$('#qprev');
+  if(!en.size){ el.textContent='Turn on at least one skill to start.'; return; }
+  if(!ds.length){ el.textContent='Turn on at least one difficulty level to start.'; return; }
+  const n=Math.max(1,Math.min(60,Math.round(+$('#qn').value)||q.n)), a=allocQuick(q.sec,n,en,false), mins=Math.max(1,Math.round(n*(q.sec==='rw'?71:95)/60));
+  el.innerHTML=`<b>${n} question${n>1?'s':''}, about ${mins} min:</b> `+Object.entries(a).filter(e=>e[1]>0).map(([k,c])=>`<span>${esc(SKN[k])} × ${c}</span>`).join('');
+}
+function home(){
+  clearInterval(ST.tick); ST.screen='';
+  const order=[['rw',1],['rw',2],['math',1],['math',2]];
+  const sheet=order.map(([sec,n],bi)=>{
+    const sp=SPEC[sec], dots=Array.from({length:sp.perModule},(_,i)=>{ const r=Math.random(); return `<i class="${r<.12?'mk':r<.8?'on':''}" style="--d:${bi*260+i*22}ms"></i>`; }).join('');
+    return `${bi===2?'<div class="gap"></div>':''}<div class="blk ${sec}" data-sec="${sec}" style="flex:${sp.minutes}"><header>${sp.name}<span>Module ${n}</span></header><div class="dots" aria-hidden="true">${dots}</div><footer>${sp.perModule} questions · ${sp.minutes} minutes</footer></div>`;
+  }).join('');
+  const fld=(k,label)=>`<label class="fld"><span>${label}</span><span class="inp"><input type="number" min="10" max="900" id="tm_${k}" value="${ST.cfg.timers[k]}"><em>sec</em></span></label>`;
+  app.innerHTML=`<div class="site" id="site">
+  <nav class="nav"><div class="wrap">
+    <div class="brand"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#0e1330"/><circle cx="9" cy="9" r="3.2" fill="#ffd23f"/><circle cx="19" cy="9" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="19" cy="19" r="3.2" fill="#fff"/></svg>SAT Simulator</div>
+    <button class="lnk" data-go="setup">Full test</button><button class="lnk" data-go="quick">Quick practice</button><button class="lnk" data-go="progress">Progress</button><button class="lnk" data-go="inside">What's included</button>
+    <button class="lnk thm" id="theme" type="button"></button><button class="sbtn sm" id="go2">Start test</button></div></nav>
+
+  <main>
+  <section class="hero"><div class="wrap">
+    <h1>Practice the digital SAT the way you'll take it.</h1>
+    <p class="lead">Full-length modules built from the College Board question bank, with the same question mix and order, a timer on every question, a built-in Desmos calculator, and a score estimate when you finish.</p>
+    <div class="cta"><button class="sbtn big" id="go">Start test</button><button class="sbtn big line" data-go="setup">Adjust setup</button></div>
+    ${resumeBanner()}
+    ${todayChip()}
+    <div class="sheet" id="sheet">${sheet}</div>
+    <p class="sheetnote">Each circle is one question. The highlighted modules are the ones you've selected below.</p>
+  </div></section>
+
+  <section class="sect" id="setup"><div class="wrap">
+    <h2>Set up your test</h2>
+    <p class="sub">Choose what to take, how you want to practice, and where the questions come from.</p>
+    <div class="panel">
+      <div class="rowset"><div><h3>What to take</h3><p class="why">Module 2 adjusts to how you do on Module 1.</p></div>
+        <div class="segs">
+          <label class="seg"><input type="radio" name="sec" value="full" ${ST.cfg.sections==='full'?'checked':''}><b>Full test</b><span>4 modules · 2 h 14 min</span></label>
+          <label class="seg"><input type="radio" name="sec" value="rw" ${ST.cfg.sections==='rw'?'checked':''}><b>Reading and Writing</b><span>2 modules · 64 min</span></label>
+          <label class="seg"><input type="radio" name="sec" value="math" ${ST.cfg.sections==='math'?'checked':''}><b>Math</b><span>2 modules · 70 min</span></label>
+        </div></div>
+
+      <div class="rowset"><div><h3>How to practice</h3><p class="why">Turn feedback off for exam conditions.</p></div>
+        <div>
+          <label class="check"><input type="checkbox" id="fb" ${ST.cfg.feedback?'checked':''}><div><b>Check answers as you go</b><span>A Check answer button shows the correct answer and explanation when you miss a question.</span></div></label>
+          <label class="check" style="margin-top:16px"><input type="checkbox" id="sqt" ${ST.cfg.showQT?'checked':''}><div><b>Show the timer on each question</b><span>Turn off to practice without seeing your pace. Your times are still recorded.</span></div></label>
+          <label class="check" style="margin-top:16px"><input type="checkbox" id="unt" ${ST.cfg.untimed?'checked':''}><div><b>Untimed study mode</b><span>No module clock and no automatic submit, so you can take your time while you learn a skill.</span></div></label>
+          <div class="grp"><b>Time target for each question</b>
+            <div class="muted" style="font-size:13.5px;margin-bottom:10px">The timer on a question turns red when you pass its target.</div>
+            <div class="flds">${fld('long','Long reading')}${fld('grammar','Grammar')}${fld('vocab','Vocabulary')}${fld('rest','Other reading and writing')}</div>
+            <div class="flds" style="margin-top:12px">${fld('easy','Math, easy')}${fld('med','Math, medium')}${fld('hard','Math, hard')}</div>
+            <p class="hint">Long reading covers central ideas, inferences, evidence and cross-text questions. Grammar is Standard English Conventions, and Vocabulary is Words in Context. Other covers transitions, synthesis, text structure and charts.</p>
+            <div class="tools"><button class="sbtn mini" id="rst" type="button">Reset to defaults</button></div>
+          </div></div></div>
+
+      <div class="rowset"><div><h3>Question source</h3><p class="why">Questions load from the College Board SAT Suite Question Bank when your browser can reach it.</p></div>
+        <div>
+          <div class="srcline">
+            <label class="seg"><input type="radio" name="src" value="auto" ${ST.cfg.source==='auto'?'checked':''}><b>College Board question bank</b><span>Live questions, with explanations</span></label>
+            <label class="seg"><input type="radio" name="src" value="demo" ${ST.cfg.source==='demo'?'checked':''}><b>Demo questions</b><span>A small built-in set that works offline</span></label>
+          </div>
+          <div class="tools"><button class="sbtn mini" id="imp" type="button">Import question file</button><button class="sbtn mini" id="diag" type="button">Test the question bank connection</button>${ST.custom?`<span class="tag">${ST.custom.length} imported</span>`:''}</div>
+          <div class="aside">If the question bank can't be reached from this page, the test falls back to a few demo questions so everything else still works. The results screen shows which source was used.</div>
+          <details class="fmt"><summary>Import file format</summary><p>A JSON list: <code>[{"section":"rw|math","domain":"CAS|INI|SEC|EOI|H|P|Q|S","difficulty":"E|M|H","type":"mcq|spr","stimulus":"…","stem":"…","options":["…"],"correct":[1],"rationale":"…"}]</code>. For multiple choice, <code>correct</code> lists option positions starting at 0. For student-produced response, it lists the accepted answers as text.</p></details>
+        </div></div>
+
+      <div class="startbar"><p>Your settings are saved in this browser for next time.</p><button class="sbtn big" id="go3">Start test</button></div>
+    </div>
+  </div></section>
+
+  <section class="sect" id="quick"><div class="wrap">
+    <h2>Quick practice</h2>
+    <p class="sub">A short set on one subject with the same mix of skills as a real module. Turn off any skill or difficulty level you don't want to practice. It uses the practice settings above.</p>
+    <div class="panel">
+      <div class="rowset"><div><h3>Subject and length</h3><p class="why">Quick practice covers one subject at a time.</p></div>
+        <div><div class="segs" style="grid-template-columns:1fr 1fr">
+          <label class="seg"><input type="radio" name="qsec" value="rw" ${ST.quick.sec==='rw'?'checked':''}><b>Reading and Writing</b><span>Passage-based questions</span></label>
+          <label class="seg"><input type="radio" name="qsec" value="math" ${ST.quick.sec==='math'?'checked':''}><b>Math</b><span>About 75% multiple choice</span></label></div>
+          <div class="flds" style="margin-top:16px"><label class="fld"><span>Number of questions</span><span class="inp"><input type="number" id="qn" min="1" max="60" value="${ST.quick.n}"></span></label></div></div></div>
+      <div class="rowset"><div><h3>Skills to include</h3><p class="why">Questions are spread across the skills you leave on, in the same proportions as a real module.</p></div>
+        <div><div id="qskills"></div><div class="tools" style="margin-top:0"><button class="sbtn mini" id="qall" type="button">Turn all on</button><button class="sbtn mini" id="qnone" type="button">Turn all off</button></div></div></div>
+      <div class="rowset"><div><h3>Difficulty</h3><p class="why">Turn off any level you don't want. The questions keep the usual blend of the levels you leave on.</p></div>
+        <div><div class="chks" id="qdiff"></div></div></div>
+      <div class="startbar"><p class="chips" id="qprev"></p><button class="sbtn big" id="goq">Start quick practice</button></div>
+    </div>
+  </div></section>
+
+  ${progressHTML()}
+
+  <section class="sect" id="inside"><div class="wrap">
+    <h2>What's included</h2>
+    <p class="sub">Everything is built around practicing under test conditions and learning from your misses.</p>
+    <div class="feat">
+      <div><b>The real test layout</b><p>Passage and question side by side, a question map, mark for review, an answer eliminator, a passage highlighter, a module clock you can hide, a 10-minute break between sections and keyboard shortcuts.</p></div>
+      <div><b>A clock on every question</b><p>Set a pace target for each question type. Results show where your time went, question by question.</p></div>
+      <div><b>The right answer after a miss</b><p>See the correct answer and the explanation right away, or review the whole module at the end.</p></div>
+      <div><b>Desmos and a reference sheet</b><p>A graphing calculator you can drag and resize, plus the Math reference sheet, in every Math module. Reading and Writing has none, as on the real exam.</p></div>
+      <div><b>An adaptive second module</b><p>A strong first module leads to a harder second one, as on the digital exam.</p></div>
+      <div><b>A score estimate</b><p>A total out of 1600 and a score out of 800 for each section, with a likely range.</p></div>
+      <div><b>Quick practice and retries</b><p>Run a short set on the skills you choose, or redo only the questions you missed right after a test.</p></div>
+      <div><b>A skill map and a study plan</b><p>See your accuracy on all 30 skills, get a tip for each one, and start a 10-question set on any skill in one click.</p></div>
+      <div><b>Goals and streaks</b><p>Set a target score and a daily question goal. Your score trend, streak and suggested next steps are on one screen.</p></div>
+      <div><b>A pace report</b><p>A chart of the time you spent on every question, plus coaching on rushed misses and answers that took too long.</p></div>
+      <div><b>Review mode and a mistake notebook</b><p>Step through every question you missed with its explanation. Missed questions stay in your notebook until you get them right.</p></div>
+      <div><b>Your data stays with you</b><p>Progress is saved in this browser. Export it as a file to back it up or move it to another device, or print your report.</p></div>
+      <div><b>Resume where you left off</b><p>Close the tab in the middle of a test and pick up exactly where you were, with your answers kept and the clock paused.</p></div>
+      <div><b>Untimed study and dark mode</b><p>Learn a new skill without a clock, and switch the whole site to a dark theme for late-night sessions.</p></div>
+      <div><b>A log of why you miss questions</b><p>Tag each miss as a content gap, a misread, a careless slip or a rushed answer, and see which one costs you the most.</p></div>
+      <div><b>Test-day details</b><p>A 5-minute warning, a passage highlighter, adjustable text size, a full screen mode and keyboard control of every answer choice.</p></div>
+    </div>
+  </div></section>
+
+  <section class="sect" id="format"><div class="wrap">
+    <h2>Test format</h2>
+    <p class="sub">Each module follows the digital SAT's content mix and ordering.</p>
+    <table class="fmtt"><tr><th>Section</th><th>Modules</th><th>Per module</th><th>Questions by domain</th></tr>
+      <tr><td><b>Reading and Writing</b></td><td>2 × 32 min</td><td>27 questions</td><td>Craft and Structure 8 · Information and Ideas 7 · Standard English Conventions 7 · Expression of Ideas 5</td></tr>
+      <tr><td><b>Math</b></td><td>2 × 35 min</td><td>22 questions</td><td>Algebra 8 · Advanced Math 8 · Problem-Solving and Data Analysis 3 · Geometry and Trigonometry 3</td></tr></table>
+    <p class="hint" style="margin-top:14px">Reading and Writing questions run by domain and then by skill: Words in Context, Text Structure, Cross-Text, Central Ideas, Evidence, Inferences, Boundaries, Form, Structure, and Sense, Transitions, then Rhetorical Synthesis. Math questions are spread across each domain's skills and run from easy to hard, with about 75% multiple choice and 25% student-produced response.</p>
+  </div></section>
+  </main>
+
+  <footer class="foot"><div class="wrap">SAT Simulator is an independent practice tool. It is not affiliated with or endorsed by College Board. SAT is a registered trademark of College Board. Score estimates are approximate and won't match an official score exactly.</div></footer>
+  </div>`;
+  const site=$('#site');
+  const sync=()=>{ const v=(document.querySelector('input[name=sec]:checked')||{}).value||'full'; document.querySelectorAll('#sheet .blk').forEach(b=>b.classList.toggle('dim',v!=='full'&&b.dataset.sec!==v)); };
+  document.querySelectorAll('input[name=sec]').forEach(r=>r.addEventListener('change',sync)); sync();
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const t=document.getElementById(b.dataset.go); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); });
+  $('#imp').onclick=()=>$('#importfile').click();
+  $('#diag').onclick=diagnose;
+  $('#rst').onclick=()=>{ ST.cfg.timers=Object.assign({},DEF_TIMERS); saveTimers(); home(); };
+  $('#go').onclick=startTest; $('#go2').onclick=startTest; $('#go3').onclick=startTest;
+  renderQuick();
+  document.querySelectorAll('input[name=qsec]').forEach(r=>r.onchange=()=>{ ST.quick.sec=r.value; ST.quick.off=[]; saveQuick(); renderQuick(); });
+  $('#qn').oninput=()=>{ updQ(); };
+  $('#qskills').onchange=e=>{ const k=e.target.dataset.k; if(!k) return; const off=ST.quick.off, i=off.indexOf(k); if(e.target.checked){ if(i>=0) off.splice(i,1); } else if(i<0) off.push(k); saveQuick(); updQ(); };
+  $('#qall').onclick=()=>{ ST.quick.off=[]; saveQuick(); renderQuick(); };
+  $('#qnone').onclick=()=>{ ST.quick.off=allKeys(ST.quick.sec); saveQuick(); renderQuick(); };
+  $('#qdiff').onchange=e=>{ const d=e.target.dataset.d; if(!d) return; const off=ST.quick.dOff, i=off.indexOf(d); if(e.target.checked){ if(i>=0) off.splice(i,1); } else if(i<0) off.push(d); saveQuick(); updQ(); };
+  $('#goq').onclick=()=>startQuick();
+  bindProgress(); bindTheme();
+  const rs=$('#rsm'); if(rs) rs.onclick=resumeSession;
+  const rd=$('#rsd'); if(rd) rd.onclick=()=>{ if(confirm('Discard your test in progress?')){ clearSession(); home(); } };
+}
+$('#importfile').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const arr=JSON.parse(await f.text());
+    ST.custom=arr.map((q,i)=>({id:'imp'+i,section:q.section,domain:q.domain,diff:(q.difficulty||'M')[0].toUpperCase(),
+      full:{type:q.type||'mcq',stimulus:q.stimulus||'',stem:q.stem||'',options:q.options||[],correct:q.correct||[],rationale:q.rationale||''}}));
+    ST.custom.forEach(c=>{c.full.options=c.full.options.map(String);});
+    ST.lists={}; home();
+  }catch(err){ alert('Could not read that file: '+err.message); }
+  e.target.value='';
+};
+
+// ---------- flow ----------
+function loading(msg){ app.innerHTML=`<div class="site"><div class="center"><div><div class="spin"></div><div>${msg}</div></div></div></div>`; }
+function readSettings(){
+  if($('#fb')){ // only on the home screen
+    ST.cfg.feedback=$('#fb').checked; ST.cfg.showQT=$('#sqt').checked; ST.cfg.untimed=$('#unt').checked;
+    Object.keys(DEF_TIMERS).forEach(k=>{ ST.cfg.timers[k]=+$('#tm_'+k).value||DEF_TIMERS[k]; }); saveTimers();
+    ST.cfg.source=(document.querySelector('input[name=src]:checked')||{}).value||'auto';
+  }
+  ST.dropped=0; ST.rawSample=null; ST.skillUse={}; ST.qnote='';
+}
+// ----- quick practice -----
+function skillWeights(sec){
+  const w={};
+  for(const [dom,tot] of Object.entries(SPEC[sec].dist)){
+    const sp=MODSPEC[sec][dom], raw=sp.map(([k,mn,mx])=>(mn+mx)/2), sum=raw.reduce((a,b)=>a+b,0);
+    sp.forEach(([k],i)=>{ w[k]=tot*raw[i]/sum; });
+  }
+  return w;
+}
+// Spread n questions across the enabled skills in the real per-module proportions.
+// cap (optional) limits each skill to the number of questions actually available.
+function allocQuick(sec,n,en,jitter,cap){
+  const w=skillWeights(sec);
+  let ks=allKeys(sec).filter(k=>en.has(k)&&(!cap||cap[k]>0));
+  const out={}; ks.forEach(k=>{ out[k]=0; });
+  const total=cap?Math.min(n,ks.reduce((a,k)=>a+cap[k],0)):n;
+  let left=total;
+  while(left>0&&ks.length){
+    const sum=ks.reduce((a,k)=>a+w[k],0), quota=ks.map(k=>left*w[k]/sum), fr=[]; let used=0;
+    ks.forEach((k,i)=>{ const f=Math.floor(quota[i]); out[k]+=f; used+=f; fr.push(quota[i]-f); });
+    const r=left-used;
+    if(r>0){
+      if(jitter){ // systematic sampling: each skill is rounded up with probability equal to its fractional part
+        const order=shuffle(ks.map((k,i)=>i)), u=Math.random(); let cum=0; const ivs=order.map(i=>{ const lo=cum; cum+=fr[i]; return [i,lo,cum]; });
+        for(let t=0;t<r;t++){ const pt=u+t, hit=ivs.find(v=>pt>=v[1]&&pt<v[2])||ivs[ivs.length-1]; out[ks[hit[0]]]++; }
+      } else { // preview: round up the largest fractions
+        ks.map((k,i)=>[k,fr[i]]).sort((x,y)=>y[1]-x[1]).slice(0,r).forEach(x=>{ out[x[0]]++; });
+      }
+    }
+    if(cap) ks.forEach(k=>{ if(out[k]>cap[k]) out[k]=cap[k]; });
+    left=total-ks.reduce((a,k)=>a+out[k],0);
+    if(cap) ks=ks.filter(k=>out[k]<cap[k]);
+  }
+  return out;
+}
+function pickDiff(mix,diffs){ const ws=diffs.map(d=>mix[d]||.1); let r=Math.random()*ws.reduce((a,b)=>a+b,0); for(let i=0;i<diffs.length;i++){ r-=ws[i]; if(r<=0) return diffs[i]; } return diffs[diffs.length-1]; }
+async function buildQuick(m){
+  const list0=await getList(m.sec), en=new Set(m.skills), dset=new Set(m.diffs||['E','M','H']);
+  const tagged=list0.some(x=>x.sk);
+  // strict filter: only questions on an enabled skill AND an enabled difficulty
+  const list=list0.filter(x=>dset.has(x.diff)&&(tagged?(x.sk&&en.has(x.sk)):true));
+  ST.qnote='';
+  if(!list.length){ m.emptyMsg='No questions in this question set match the skills and difficulty levels you chose.'; return []; }
+  let chosen=[];
+  if(tagged){
+    const cap={}; list.forEach(x=>{ cap[x.sk]=(cap[x.sk]||0)+1; });
+    const alloc=allocQuick(m.sec,m.count,en,true,cap), ds=[...dset];
+    for(const [key,n] of Object.entries(alloc)){
+      for(let i=0;i<n;i++){
+        let pool=list.filter(q=>q.sk===key&&!chosen.includes(q));
+        const fresh=pool.filter(q=>!ST.used.has(q.id)); if(fresh.length) pool=fresh;
+        const want=pickDiff(m.mix,ds), sub=pool.filter(q=>q.diff===want);
+        const p=rnd(sub.length?sub:pool); chosen.push(p); ST.used.add(p.id);
+      }
+    }
+  } else {
+    const sh=shuffle(list); chosen=sh.filter(q=>!ST.used.has(q.id)).concat(sh.filter(q=>ST.used.has(q.id))).slice(0,m.count);
+    chosen.forEach(q=>ST.used.add(q.id));
+    ST.qnote='These questions have no skill labels, so your skill choices could not be applied.';
+  }
+  if(chosen.length<m.count) ST.qnote=(ST.qnote?ST.qnote+' ':'')+`Only ${chosen.length} question${chosen.length===1?' was':'s were'} available for your choices, so this set is shorter than the ${m.count} you asked for.`;
+  const out=[]; let idx=0;
+  async function worker(){ while(idx<chosen.length){ const k=idx++; out[k]=await fetchValid(chosen[k],list,m); } }
+  await Promise.all(Array.from({length:Math.min(6,Math.max(1,chosen.length))},worker));
+  if(m.sec==='math') await enforceTypes(out,list);
+  return orderModule(m.sec,out);
+}
+// cfg is optional: omitted = use the settings on the Quick practice form
+async function startQuick(cfg){
+  readSettings();
+  const q=cfg||ST.quick;
+  if(!cfg) q.n=Math.max(1,Math.min(60,Math.round(+$('#qn').value)||10));
+  const skills=allKeys(q.sec).filter(k=>!(q.off||[]).includes(k)), diffs=['E','M','H'].filter(d=>!(q.dOff||[]).includes(d));
+  if(!skills.length){ alert('Turn on at least one skill to practice.'); return; }
+  if(!diffs.length){ alert('Turn on at least one difficulty level to practice.'); return; }
+  if(!cfg) saveQuick();
+  ST.lists={}; ST.used=new Set(); ST.results=[]; ST.mi=0;
+  const pace=q.sec==='rw'?71:95;
+  ST.plan=[{sec:q.sec,n:1,quick:true,count:q.n,skills,diffs,mix:{E:.3,M:.45,H:.25},minutes:q.n*pace/60,label:`Quick practice: ${SPEC[q.sec].name}`}];
+  await beginModule();
+}
+async function startSkills(sec,keys){ await startQuick({sec,n:10,off:allKeys(sec).filter(k=>!keys.includes(k)),dOff:[]}); }
+async function startWeak(sec){ const wk=weakList(sec).map(o=>o.k); if(!wk.length) return; await startSkills(sec,wk); }
+function startNotebook(sec){
+  const nb=ld(MK,[]).filter(q=>q.section===sec); if(!nb.length) return;
+  const set=shuffle(nb).slice(0,15);
+  readSettings(); ST.cfg.feedback=true; ST.results=[]; ST.mi=0; ST.sourceNote='Questions saved from your earlier tests';
+  ST.plan=[{sec,n:1,retry:true,nb:true,fixed:set,minutes:set.length*(sec==='rw'?71:95)/60,label:`Mistake notebook: ${SPEC[sec].name}`}];
+  beginModule();
+}
+function startRetry(){
+  const per={};
+  ST.results.forEach(r=>r.qs.forEach((q,i)=>{ if(!isCorrect(q,r.ans[i])) (per[r.m.sec]=per[r.m.sec]||[]).push(q); }));
+  const secs=Object.keys(per); if(!secs.length) return;
+  ST.cfg.feedback=true; ST.results=[]; ST.mi=0; ST.skillUse={};
+  ST.plan=secs.map(sec=>({sec,n:1,retry:true,fixed:per[sec],minutes:per[sec].length*(sec==='rw'?71:95)/60,label:`Retry missed questions: ${SPEC[sec].name}`}));
+  beginModule();
+}
+async function startTest(){
+  ST.cfg.sections=(document.querySelector('input[name=sec]:checked')||{}).value||'full';
+  readSettings();
+  ST.lists={}; ST.used=new Set(); ST.results=[]; ST.mi=0;
+  const secs=ST.cfg.sections==='full'?['rw','math']:[ST.cfg.sections];
+  ST.plan=[]; secs.forEach((s,si)=>[1,2].forEach(n=>ST.plan.push({sec:s,n,secNo:si+1,mix:{E:.25,M:.5,H:.25},label:`Section ${si+1}, Module ${n}: ${SPEC[s].name}`})));
+  await beginModule();
+}
+function modEndFor(m){ return ST.cfg.untimed?Infinity:Date.now()+modMin(m)*60000; }
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.setAttribute('role','status'); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),4500); }
+// ----- theme -----
+function applyTheme(){ const t=PF().theme||'auto', dark=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme=dark?'dark':'light'; }
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme); }catch(e){}
+function themeLabel(){ return '◐ '+({auto:'Auto',light:'Light',dark:'Dark'}[PF().theme]||'Auto'); }
+function bindTheme(){ const b=$('#theme'); if(!b) return; b.textContent=themeLabel(); b.title='Change theme'; b.onclick=()=>{ const o=['auto','light','dark'], t=PF().theme||'auto'; setPF('theme',o[(o.indexOf(t)+1)%3]); applyTheme(); b.textContent=themeLabel(); }; }
+// ----- save and resume a test in progress -----
+function saveSession(between){
+  if(!ST.plan.length) return;
+  const o={v:1,cfg:{sections:ST.cfg.sections,feedback:ST.cfg.feedback,showQT:ST.cfg.showQT,untimed:ST.cfg.untimed},plan:ST.plan,mi:ST.mi,results:ST.results,used:[...ST.used],sourceNote:ST.sourceNote,qnote:ST.qnote,skillUse:ST.skillUse,dropped:ST.dropped,t:Date.now()};
+  if(between) o.between=true;
+  else{
+    if(ST.screen!=='test'||!ST.q.length) return;
+    const qt=Object.assign({},ST.qtime); qt[ST.qi]=elapsed(ST.qi);
+    Object.assign(o,{q:ST.q,qi:ST.qi,ans:ST.ans,flag:ST.flag,elim:ST.elim,checked:ST.checked,qtime:qt,hl:ST.hl,left:isFinite(ST.modEnd)?Math.max(0,ST.modEnd-Date.now()):null});
+  }
+  sv(SESSION,o);
+}
+function scheduleSave(){ if(ST._sv) return; ST._sv=setTimeout(()=>{ ST._sv=null; saveSession(); },1200); }
+function clearSession(){ clearTimeout(ST._sv); ST._sv=null; try{ localStorage.removeItem(SESSION); }catch(e){} }
+window.addEventListener('pagehide',()=>saveSession());
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) saveSession(); });
+function resumeInfo(){ const o=ld(SESSION,null); return (o&&o.plan&&o.plan[o.mi])?o:null; }
+function resumeBanner(){
+  const o=resumeInfo(); if(!o) return '';
+  const m=o.plan[o.mi], what=o.between?`Next up: ${m.label}`:`${m.label} · question ${o.qi+1} of ${o.q.length}${o.left!=null?' · '+fmt(o.left/1000)+' left':''}`;
+  return `<div class="resume"><div><b>You have a test in progress</b><span>${esc(what)}. Starting a new test replaces it.</span></div><div class="tools"><button class="sbtn" id="rsm" type="button">Resume</button><button class="sbtn mini" id="rsd" type="button">Discard</button></div></div>`;
+}
+function resumeSession(){
+  const o=resumeInfo(); if(!o) return;
+  Object.assign(ST.cfg,o.cfg||{});
+  ST.plan=o.plan; ST.mi=o.mi; ST.results=o.results||[]; ST.used=new Set(o.used||[]); ST.sourceNote=o.sourceNote||''; ST.qnote=o.qnote||''; ST.skillUse=o.skillUse||{}; ST.dropped=o.dropped||0; ST.lists={}; ST.q=[];
+  if(o.between){ beginModule(); return; }
+  ST.q=o.q; ST.qi=o.qi; ST.ans=o.ans||{}; ST.flag=o.flag||{}; ST.elim=o.elim||{}; ST.checked=o.checked||{}; ST.qtime=o.qtime||{}; ST.hl=o.hl||{};
+  const m=ST.plan[ST.mi], left=o.left;
+  stage('Welcome back',`<p style="margin-top:0">${esc(m.label)} · question ${ST.qi+1} of ${ST.q.length}.</p><p class="muted" style="margin:0">${left==null?'This set is untimed.':`The clock was paused while you were away. You have <b style="color:var(--ink)">${fmt(left/1000)}</b> left.`}</p>`,`<button class="sbtn big" id="rbtn" type="button">Continue</button>`);
+  $('#rbtn').onclick=()=>{ ST.modEnd=left==null?Infinity:Date.now()+left; ST.qStart=ST.checked[ST.qi]?null:Date.now(); ST.screen='test'; ST.w5=left==null||left<=300000; ST.w1=left==null||left<=60000; render(); ST.tick=setInterval(tick,250); };
+}
+async function beginModule(){
+  const m=ST.plan[ST.mi];
+  if(m.n===2){ // adaptive routing
+    const prev=ST.results[ST.results.length-1];
+    const pct=prev.score/prev.qs.length;
+    m.hard=pct>=0.65; m.mix=m.hard?{E:.1,M:.4,H:.5}:{E:.5,M:.4,H:.1};
+  }
+  loading(`Loading ${esc(m.label)}…`);
+  ST.q=m.fixed?m.fixed.slice():m.quick?await buildQuick(m):await buildModule(m);
+  if(!ST.q.length){
+    stage('No matching questions',`<p style="margin:0">${esc(m.emptyMsg||'No questions matched your choices.')} Turn on more skills or difficulty levels, or change the question source, and try again.</p>`,`<button class="sbtn big" id="bk">Back to setup</button>`);
+    $('#bk').onclick=home; return;
+  }
+  if(m.quick) m.minutes=Math.max(1,ST.q.length*(m.sec==='rw'?71:95)/60);
+  ST.qi=0; ST.ans={}; ST.flag={}; ST.elim={}; ST.hl={}; ST.checked={}; ST.qtime={}; ST.qStart=Date.now();
+  ST.modEnd=modEndFor(m);
+  directions(m);
+}
+const LOGO='<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#0d1636"/><circle cx="9" cy="9" r="3.2" fill="#ffc83d"/><circle cx="19" cy="9" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="19" cy="19" r="3.2" fill="#fff"/></svg>';
+function stage(title,body,btns){
+  app.innerHTML=`<div class="site"><div class="wrap" style="max-width:780px;padding-top:48px;padding-bottom:56px"><div class="brand" style="margin-bottom:34px">${LOGO}SAT Simulator</div>
+  <h1 style="font-size:clamp(1.8rem,4vw,2.5rem);letter-spacing:-.03em;margin:0 0 18px;font-weight:800;line-height:1.1">${title}</h1>
+  <div class="panel" style="padding:26px 30px;margin-bottom:26px;line-height:1.65">${body}</div>${btns}</div></div>`;
+}
+function directions(m){
+  clearInterval(ST.tick);
+  const rw=m.sec==='rw', n=ST.q.length, mins=Math.max(1,Math.round(modMin(m)));
+  stage(esc(m.label),
+    `<p style="margin-top:0">${rw?'The questions in this section address a number of important reading and writing skills. Each question includes one or more passages, which may include a table or graph. Read each passage and question carefully, and then choose the best answer. All questions have a single best answer.':'The questions in this section address a number of important math skills. A calculator is permitted for all questions, and a Desmos graphing calculator and a reference sheet are built in. Unless otherwise indicated, all variables and expressions represent real numbers, figures are drawn to scale, and the domain of a function is all real numbers for which it is defined. For multiple-choice questions, choose the best answer. For student-produced response questions, enter your answer in the field provided.'}</p>
+     <p class="muted" style="margin-bottom:6px"><b style="color:var(--ink)">${n} questions${ST.cfg.untimed?'.':` · ${mins} minutes.`}</b> ${ST.cfg.untimed?'This set is untimed, so take your time.':'The timer starts when you press Begin.'}</p>
+     ${m.quick&&ST.qnote?`<p style="margin:0 0 10px"><b>Note:</b> ${esc(ST.qnote)}</p>`:''}<p class="muted" style="margin:0">Keyboard shortcuts: the left and right arrow keys move between questions, A to D choose an answer, and F marks a question for review.</p>`,
+    `<button class="sbtn big" id="begin">Begin module</button>`);
+  $('#begin').onclick=()=>{ ST.modEnd=modEndFor(m); ST.qStart=Date.now(); ST.screen='test'; ST.w5=ST.cfg.untimed||modMin(m)*60<=300; ST.w1=ST.cfg.untimed||modMin(m)*60<=60; render(); ST.tick=setInterval(tick,250); };
+}
+const elapsed=i=>(ST.qtime[i]||0)+(i===ST.qi&&ST.qStart?Date.now()-ST.qStart:0);
+function freeze(){ if(ST.qStart){ ST.qtime[ST.qi]=elapsed(ST.qi); ST.qStart=null; } }
+function goto(i){ freeze(); ST.qi=i; ST.qStart=ST.checked[i]?null:Date.now(); render(); }
+const targetOf=q=>ST.cfg.timers[q.cat]||60;
+const target=()=>targetOf(ST.q[ST.qi]);
+
+// ---------- test screen ----------
+function render(){
+  const m=ST.plan[ST.mi], q=ST.q[ST.qi], i=ST.qi, n=ST.q.length;
+  const checked=ST.checked[i], a=ST.ans[i];
+  let body='';
+  if(q.type==='mcq'){
+    body=q.options.map((o,k)=>{
+      let cls=''; const gone=(ST.elim[i]||[]).includes(k);
+      if(a===k) cls+=' sel'; if(gone) cls+=' gone';
+      if(checked){ if(q.correct.includes(k)) cls+=' right'; else if(a===k) cls+=' wrong'; }
+      return `<div class="opt${cls}" data-k="${k}"><div class="box" data-act="pick" data-k="${k}" tabindex="0" role="radio" aria-checked="${a===k}"><span class="let">${'ABCD'[k]}</span><span>${o}</span></div><button class="x" data-act="elim" data-k="${k}" title="Cross out">✕</button></div>`;
+    }).join('');
+  } else {
+    body=`<div class="spr"><input id="sprin" autocomplete="off" value="${esc(a||'')}" ${checked?'disabled':''} placeholder="Answer">
+    <div class="prev" id="sprprev">${a?'Answer preview: '+esc(a):''}</div>
+    <div class="hint">Enter an integer, decimal, or fraction (e.g. 3/4 or −2.5). Up to 5 characters for a positive answer, 6 for a negative.</div></div>`;
+  }
+  let fb='';
+  if(checked){
+    const ok=isCorrect(q,a);
+    fb=`<div class="fb ${ok?'ok':'no'}"><h4>${ok?'✓ Correct':(a===undefined||a===''?'✗ No answer given':'✗ Incorrect')}</h4>
+      ${ok?'':`<div>Correct answer: <b>${esc(answerText(q))}</b>${a!==undefined&&a!==''?` &nbsp;·&nbsp; Your answer: <b>${q.type==='mcq'?'ABCD'[a]:esc(a)}</b>`:''}</div>`}
+      ${q.rationale?`<div class="rat">${q.rationale}</div>`:''}</div>`;
+  }
+  const check=(ST.cfg.feedback&&!checked)?`<div class="checkrow"><button class="btn ghost" data-act="check" ${(a===undefined||a==='')?'disabled':''}>Check answer</button></div>`:'';
+  const head=`<div class="qhead"><span class="qnum">${i+1}</span>
+    <button class="flagbtn ${ST.flag[i]?'on':''}" data-act="flag">${ST.flag[i]?'⚑ Marked for Review':'⚐ Mark for Review'}</button>
+    <span class="sp"></span>
+    ${q.type==='mcq'?`<button class="tool ${ST.elimOn?'on':''}" data-act="elimtool" title="Answer eliminator"><s>ABC</s></button>`:''}
+    <div class="qtimer" id="qtimer" style="${ST.cfg.showQT?'':'display:none'}"><span class="chip">${CATS[q.cat]}</span><span id="qt">0:00</span><span class="bar"><i id="qbar"></i></span><span>/ ${fmt(target())}</span></div></div>`;
+  const stim=q.stimulus?`<div class="pane left"><div class="stim ${ST.hlOn?'hl-on':''}" id="stim">${(ST.hl&&ST.hl[i])||q.stimulus}</div></div>`:'';
+  const right=`<div class="pane ${q.stimulus?'':'solo'} ${ST.elimOn?'elim':''}" style="${q.stimulus?'':'margin:0 auto;width:100%'}">${head}<div class="stem">${q.stem}</div>${body}${check}${fb}</div>`;
+  app.innerHTML=`
+  <div class="top ui"><div class="l"><b>${esc(m.label)}</b><small>${ST.cfg.feedback?'Practice mode':'Exam mode'} · ${esc(SPEC[m.sec].domNames[q.domain]||'')}</small></div>
+    <div class="c"><div class="t" id="mt_">${ST.hideTimer?'':(isFinite(ST.modEnd)?fmt((ST.modEnd-Date.now())/1000):'Untimed')}</div><button data-act="hidet">${ST.hideTimer?'Show':'Hide'}</button></div>
+    <div class="r">${m.sec==='math'?'<button class="tool" data-act="calc">▦ Calculator</button><button class="tool" data-act="ref">Reference</button>':(q.stimulus?`<button class="tool ${ST.hlOn?'on':''}" data-act="hl" title="Select text in the passage to highlight it. Select it again to remove.">✎ Highlight</button>`:'')}<button class="tool" data-act="fs" title="Change text size" aria-label="Change text size">Aa</button><button class="tool" data-act="full" title="Full screen" aria-label="Full screen">⛶</button><button class="tool" data-act="dirs">Directions</button></div></div>
+  <div class="stripe"></div>
+  <div class="main">${stim}${right}</div>
+  <div class="stripe"></div>
+  <div class="bot ui"><div class="nm">Practice Test</div>
+    <button class="qnavbtn" data-act="nav">Question ${i+1} of ${n} ▴</button>
+    <div class="r"><button class="btn ghost" data-act="back" ${i===0?'disabled':''}>Back</button>
+    <button class="btn" data-act="next">${i===n-1?'Review':'Next'}</button></div></div>`;
+  if(m.sec!=='math') $('#calc').style.display='none'; // the real exam has a calculator in Math only
+  document.documentElement.style.setProperty('--fs',PF().fs/100);
+  const sm=$('#stim');
+  if(sm) sm.addEventListener('mouseup',e=>{
+    if(!ST.hlOn) return;
+    const sel=getSelection();
+    if(sel&&sel.rangeCount&&!sel.isCollapsed){
+      const r=sel.getRangeAt(0); if(!sm.contains(r.commonAncestorContainer)) return;
+      const mk=document.createElement('mark'); mk.className='hl';
+      try{ r.surroundContents(mk); }catch(_){ try{ mk.appendChild(r.extractContents()); r.insertNode(mk); }catch(__){ return; } }
+      sel.removeAllRanges();
+    } else {
+      const mk=e.target.closest&&e.target.closest('mark.hl'); if(!mk) return;
+      mk.replaceWith(...mk.childNodes);
+    }
+    sm.normalize(); ST.hl[i]=sm.innerHTML;
+  });
+  const inp=$('#sprin');
+  if(inp) inp.oninput=e=>{ ST.ans[i]=e.target.value.trim().slice(0,6); $('#sprprev').textContent=ST.ans[i]?'Answer preview: '+ST.ans[i]:''; const c=document.querySelector('[data-act=check]'); if(c) c.disabled=!ST.ans[i]; };
+  tick();
+  scheduleSave();
+  if(ST.focusK!=null){ const el=document.querySelector('[data-act=pick][data-k="'+ST.focusK+'"]'); ST.focusK=null; if(el) el.focus(); }
+}
+function tick(){
+  if(!ST.q.length||!ST.plan[ST.mi]) return;
+  const left=(ST.modEnd-Date.now())/1000;
+  const mt=$('#mt_'); if(mt&&!ST.hideTimer){ mt.textContent=isFinite(left)?fmt(left):'Untimed'; mt.style.color=left<300?'#b3261e':''; }
+  if(!ST.w5&&left<=300){ ST.w5=true; toast('5 minutes remaining'); }
+  if(!ST.w1&&left<=60){ ST.w1=true; toast('1 minute remaining'); }
+  if((ST.tc=(ST.tc||0)+1)%20===0) scheduleSave();
+  if(left<=0){ clearInterval(ST.tick); finishModule(true); return; }
+  const t=elapsed(ST.qi)/1000, tg=target(), qt=$('#qt');
+  if(qt){ qt.textContent=fmt(t); const bar=$('#qbar'); bar.style.width=Math.min(100,t/tg*100)+'%'; $('#qtimer').classList.toggle('over',t>tg); }
+}
+
+app.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return;
+  const act=b.dataset.act, i=ST.qi, q=ST.q[i];
+  if(act==='pick'){ if(ST.checked[i]) return; const k=+b.dataset.k; ST.ans[i]=(ST.ans[i]===k&&!ST.elimOn)?undefined:k; render(); }
+  else if(act==='elim'){ const k=+b.dataset.k; const s=ST.elim[i]=ST.elim[i]||[]; const p=s.indexOf(k); p>=0?s.splice(p,1):s.push(k); render(); }
+  else if(act==='elimtool'){ ST.elimOn=!ST.elimOn; render(); }
+  else if(act==='flag'){ ST.flag[i]=!ST.flag[i]; render(); }
+  else if(act==='check'){ freeze(); ST.checked[i]=true; render(); }
+  else if(act==='back'){ if(i>0) goto(i-1); }
+  else if(act==='next'){ if(i<ST.q.length-1) goto(i+1); else navModal(); }
+  else if(act==='nav'){ navModal(); }
+  else if(act==='hidet'){ ST.hideTimer=!ST.hideTimer; render(); }
+  else if(act==='calc'){ toggleCalc(); }
+  else if(act==='hl'){ ST.hlOn=!ST.hlOn; render(); }
+  else if(act==='fs'){ const f=PF().fs; setPF('fs',f>=130?100:f+15); render(); }
+  else if(act==='full'){ try{ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); }catch(e){} }
+  else if(act==='ref'){ refModal(); }
+  else if(act==='dirs'){ const m=ST.plan[ST.mi]; modal(`<h3>${esc(m.label)}</h3><p>${m.sec==='rw'?'Read each passage and question carefully, then choose the best answer.':'A calculator is allowed on every question. Multiple-choice: choose the best answer. Student-produced response: enter your answer in the box.'}</p><p>Use <b>Mark for Review</b> to flag questions you want to revisit, and the <b>ABC</b> tool to cross out answer choices.</p><button class="btn" data-act="close">Close</button>`); }
+});
+document.addEventListener('keydown',e=>{ const t0=e.target; if(t0&&t0.getAttribute&&t0.getAttribute('role')==='radio'&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); ST.focusK=t0.dataset.k; t0.click(); } });
+document.addEventListener('keydown',e=>{
+  if(!document.querySelector('.qnavbtn')||document.querySelector('.ov')) return;
+  const t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return;
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  const k=e.key.toLowerCase(); let b=null;
+  if(k==='arrowright') b=document.querySelector('[data-act=next]');
+  else if(k==='arrowleft') b=document.querySelector('[data-act=back]');
+  else if(k.length===1&&'abcd'.includes(k)) b=document.querySelector('[data-act=pick][data-k="'+'abcd'.indexOf(k)+'"]');
+  else if(k==='f') b=document.querySelector('[data-act=flag]');
+  if(b&&!b.disabled){ e.preventDefault(); b.click(); }
+});
+function modal(html){ const d=document.createElement('div'); d.className='ov'; d.innerHTML=`<div class="modal">${html}</div>`;
+  d.addEventListener('click',e=>{ if(e.target===d||e.target.closest('[data-act=close]')) d.remove(); }); document.body.appendChild(d); return d; }
+function navModal(){
+  const n=ST.q.length, m=ST.plan[ST.mi]; const unans=ST.q.filter((_,i)=>ST.ans[i]===undefined||ST.ans[i]==='').length;
+  const d=modal(`<h3>${esc(m.label)}</h3><div class="legend"><span>■ Answered</span><span>▢ Unanswered</span><span style="color:#b3261e">⚑ Marked for review</span></div>
+    <div class="grid">${ST.q.map((_,i)=>{const a=ST.ans[i]!==undefined&&ST.ans[i]!=='';return `<button class="gq ${a?'ans':''} ${i===ST.qi?'cur':''}" data-g="${i}">${i+1}${ST.flag[i]?'<span class="f">⚑</span>':''}</button>`;}).join('')}</div>
+    <div class="muted" style="margin-bottom:14px">${unans?unans+' unanswered question'+(unans>1?'s':''):'All questions answered.'}</div>
+    <button class="btn ghost" data-act="close">Close</button> <button class="btn" id="fin">Submit module</button>`);
+  d.querySelectorAll('.gq').forEach(g=>g.onclick=()=>{ d.remove(); goto(+g.dataset.g); });
+  d.querySelector('#fin').onclick=()=>{ d.remove(); finishModule(false); };
+}
+function refModal(){
+  modal(`<h3>Reference sheet</h3><div style="line-height:1.9">
+  <b>Area:</b> Circle A = πr² · Rectangle A = ℓw · Triangle A = ½bh<br>
+  <b>Circle:</b> C = 2πr · a circle has 360° (2π radians)<br>
+  <b>Pythagorean theorem:</b> a² + b² = c²<br>
+  <b>Special right triangles:</b> 30°-60°-90°: sides x, x√3, 2x · 45°-45°-90°: sides s, s, s√2<br>
+  <b>Volume:</b> Rectangular solid V = ℓwh · Cylinder V = πr²h · Sphere V = (4/3)πr³ · Cone V = (1/3)πr²h · Pyramid V = (1/3)ℓwh<br>
+  <b>Triangle angles:</b> sum to 180°</div><br><button class="btn" data-act="close">Close</button>`);
+}
+
+// ---------- Desmos ----------
+let desmos=null, desmosLoading=false;
+function toggleCalc(){
+  const c=$('#calc'); const show=c.style.display!=='flex'; c.style.display=show?'flex':'none';
+  if(show&&!desmos&&!desmosLoading){
+    desmosLoading=true; $('#calcbody').innerHTML='<div class="center">Loading Desmos…</div>';
+    const s=document.createElement('script'); s.src=DESMOS_SRC;
+    s.onload=()=>{ $('#calcbody').innerHTML=''; desmos=Desmos.GraphingCalculator($('#calcbody'),{keypad:true,expressions:true,settingsMenu:true,zoomButtons:true}); desmosLoading=false; };
+    s.onerror=()=>{ $('#calcbody').innerHTML='<div class="center">Could not load Desmos (check your internet connection).</div>'; desmosLoading=false; };
+    document.head.appendChild(s);
+  }
+  if(show&&desmos) setTimeout(()=>desmos.resize(),50);
+}
+$('#calcx').onclick=()=>{ $('#calc').style.display='none'; };
+(function drag(){ const c=$('#calc'),h=$('#calch'); let dx,dy,on=false;
+  h.onmousedown=e=>{ if(e.target.id==='calcx') return; on=true; const r=c.getBoundingClientRect(); dx=e.clientX-r.left; dy=e.clientY-r.top; e.preventDefault(); };
+  document.addEventListener('mousemove',e=>{ if(!on) return; c.style.left=(e.clientX-dx)+'px'; c.style.top=(e.clientY-dy)+'px'; c.style.right='auto'; });
+  document.addEventListener('mouseup',()=>{ if(on&&desmos) desmos.resize(); on=false; });
+  new ResizeObserver(()=>{ if(desmos) desmos.resize(); }).observe(c);
+})();
+
+// ---------- finishing / results ----------
+// Missed questions stay in the notebook until they are answered correctly
+const REASONS=[
+ ['content','Did not know the content','Open the skill map, read the tip for that skill and practice it with a 10-question set.'],
+ ['misread','Misread the question','Underline exactly what the question asks before you look at the choices.'],
+ ['careless','Careless mistake','Check your work before moving on: plug answers back in and reread every choice.'],
+ ['time','Rushed or ran out of time','Set a time target for each question, and mark hard ones to come back to.'],
+ ['guess','Guessed','Cross out the choices you know are wrong first. Even eliminating one improves your odds.']];
+function saveMissed(all){
+  const map=new Map(ld(MK,[]).map(q=>[q.id,q])), tags=ld(TG,{});
+  all.forEach(r=>r.qs.forEach((q,i)=>{ if(isCorrect(q,r.ans[i])){ map.delete(q.id); delete tags[q.id]; } else map.set(q.id,q); }));
+  Object.keys(tags).forEach(k=>{ if(!map.has(k)) delete tags[k]; });
+  sv(MK,[...map.values()].slice(-60)); sv(TG,tags);
+}
+function reasonBars(c,total,top){ return top.map(r=>`<div class="wk"><div><b>${r[1]}</b></div><div class="pbar" style="width:140px"><i style="width:${Math.round(c[r[0]]/total*100)}%"></i></div><b>${c[r[0]]}</b></div>`).join(''); }
+function reasonsInner(){
+  const tags=ld(TG,{}), c={}; let missed=0, tagged=0;
+  ST.results.forEach(r=>r.qs.forEach((q,i)=>{ if(!isCorrect(q,r.ans[i])){ missed++; const t=tags[q.id]; if(t){ tagged++; c[t]=(c[t]||0)+1; } } }));
+  if(!missed) return '';
+  if(!tagged) return `<p class="hint" style="margin-top:14px">Open review mode and tag why you missed each question. This page will then show your most common reasons.</p>`;
+  const top=REASONS.filter(r=>c[r[0]]).sort((a,b)=>c[b[0]]-c[a[0]]);
+  return `<div class="panel" style="padding:22px 24px;margin-top:14px"><h4 style="margin:0 0 2px;font-size:1rem;font-weight:800">Why you missed questions</h4><p class="hint" style="margin:0 0 8px">${tagged} of ${missed} missed questions tagged</p>${reasonBars(c,tagged,top)}<p style="margin:12px 0 0"><b>Biggest fix:</b> ${top[0][2]}</p></div>`;
+}
+function refreshReasons(){ const el=$('#reasons'); if(el) el.innerHTML=reasonsInner(); }
+function allReasonsHTML(){
+  const tags=Object.values(ld(TG,{})); if(!tags.length) return '';
+  const c={}; tags.forEach(t=>{ c[t]=(c[t]||0)+1; });
+  const top=REASONS.filter(r=>c[r[0]]).sort((a,b)=>c[b[0]]-c[a[0]]);
+  return `<div class="panel nbk" style="display:block"><h3>Why you miss questions</h3><p style="margin-bottom:10px">Based on the ${tags.length} question${tags.length>1?'s':''} in your notebook that you tagged in review mode.</p>${reasonBars(c,tags.length,top)}<p style="margin:12px 0 0;max-width:none"><b>Biggest fix:</b> ${top[0][2]}</p></div>`;
+}
+function rsChips(q){ const t=ld(TG,{})[q.id]; return `<div class="rsn"><b>Why did you miss it?</b><div class="rsrow">${REASONS.map(r=>`<button class="rsc ${t===r[0]?'on':''}" data-rs="${r[0]}" type="button">${r[1]}</button>`).join('')}</div></div>`; }
+function recordResults(){
+  const all=ST.results; if(!all.length) return;
+  let n=0,c=0,tm=0,demo=false; const sks=ld(SKK,{});
+  all.forEach(r=>r.qs.forEach((q,i)=>{
+    n++; const ok=isCorrect(q,r.ans[i]); if(ok) c++; tm+=(r.qtime[i]||0)/1000;
+    const isDemo=/^demo|^imp/.test(q.id)||q.fallback; if(isDemo) demo=true;
+    if(q.sk&&!isDemo){ const o=sks[q.sk]=sks[q.sk]||{n:0,miss:0}; o.n++; if(!ok) o.miss++; }
+  }));
+  sv(SKK,sks); saveMissed(all); addDaily(n);
+  const er=estSection('rw'), em=estSection('math'), f=all[0].m;
+  const kind=f.retry?(f.nb?'Mistake notebook':'Retry'):f.quick?'Quick practice · '+SPEC[f.sec].name:(ST.cfg.sections==='full'?'Full test':SPEC[ST.cfg.sections].name);
+  const h=ld(HK,[]); h.push({t:Date.now(),kind,n,c,avg:Math.round(tm/n),total:(er&&em)?er.score+em.score:null,rw:er?er.score:null,math:em?em.score:null,demo});
+  sv(HK,h.slice(-30));
+}
+async function finishModule(timeUp){
+  clearInterval(ST.tick); ST.screen=''; freeze(); $('#calc').style.display='none';
+  const m=ST.plan[ST.mi];
+  const score=ST.q.filter((q,i)=>isCorrect(q,ST.ans[i])).length;
+  ST.results.push({m,qs:ST.q,ans:ST.ans,qtime:ST.qtime,flag:ST.flag,score,timeUp,tgs:ST.q.map(targetOf),hard:m.hard});
+  ST.q=[];
+  if(ST.mi<ST.plan.length-1){
+    ST.mi++;
+    const next=ST.plan[ST.mi];
+    saveSession(true);
+    const brk=m.sec==='rw'&&next.sec==='math'&&ST.cfg.sections==='full'&&!m.retry&&!m.quick;
+    if(brk){
+      stage('Break',`<p style="margin-top:0">${timeUp?'<b>Time ran out</b> on the last module, and your answers were submitted automatically. ':''}Take up to 10 minutes. Stand up, stretch and have some water. Math begins when you press Resume, or when the break ends.</p><div style="font-size:3rem;font-weight:800;letter-spacing:-.03em" id="brk">10:00</div>`,`<button class="sbtn big" id="cont">Resume now</button>`);
+      const end=Date.now()+600000;
+      ST.tick=setInterval(()=>{ const l=(end-Date.now())/1000; const el=$('#brk'); if(el) el.textContent=fmt(l); if(l<=0){ clearInterval(ST.tick); beginModule(); } },500);
+      $('#cont').onclick=()=>{ clearInterval(ST.tick); beginModule(); };
+    } else {
+      stage('Module complete',`<p style="margin:0">${timeUp?'<b>Time ran out</b>, so your answers were submitted automatically. ':''}Next up: <b>${esc(next.label)}</b>.${next.n===2?' Its difficulty is set by how you did on the last module.':''}</p>`,`<button class="sbtn big" id="cont">Continue</button>`);
+      $('#cont').onclick=beginModule;
+    }
+  } else { clearSession(); recordResults(); results(); }
+}
+const WT={E:1,M:2,H:3};
+function estSection(sec){
+  const rs=ST.results.filter(r=>r.m.sec===sec); if(rs.length<2) return null;
+  let got=0,tot=0; rs.forEach(r=>r.qs.forEach((q,i)=>{ const w=WT[q.diff]||2; tot+=w; if(isCorrect(q,r.ans[i])) got+=w; }));
+  const p=got/tot, hard=!!rs[1].hard, lo=hard?350:200, hi=hard?800:650;
+  const sc=Math.round((lo+(hi-lo)*p)/10)*10;
+  return {score:sc,lo:Math.max(200,sc-30),hi:Math.min(800,sc+30),hard};
+}
+const TIPS={
+ WIC:{t:"Predict the missing word from the sentence before you read the choices, then match both meaning and tone. Wrong answers are often real words that fit the topic but not the logic.",d:"Cover the choices, write your own word, and keep a running list of every word you miss."},
+ TSP:{t:"Ask what job each sentence does: claim, example, contrast, or counterpoint. Then choose the answer that describes that job, not the topic.",d:"After each passage, summarize its structure in a short phrase such as claim, then evidence, then complication."},
+ CTC:{t:"Summarize each text in one sentence, then name how they relate: agree, disagree, or build on each other. Do this before looking at the choices.",d:"Write supports, challenges or extends next to each question before you answer."},
+ CID:{t:"State the main point in your own words first. Wrong choices are usually too narrow (one detail) or too broad (more than the text says).",d:"Underline the sentence that carries the author's point, then check that every word of your answer is supported."},
+ COET:{t:"Treat the claim as the target and choose the evidence that supports its specific wording, not just its general topic.",d:"Circle the key terms in the claim and confirm each one appears in your chosen evidence."},
+ COEQ:{t:"Read the title, axes, units and key of the graph or table first. Then test each choice against the exact values.",d:"Say what the data shows in one sentence before reading the choices."},
+ INF:{t:"The right inference is the most cautious one the text directly supports. Reject choices that add new claims, even if they sound reasonable.",d:"For each choice, point to the exact words in the passage that prove it."},
+ BOU:{t:"Learn four rules: two complete sentences need a period or semicolon, a comma needs a conjunction to join them, a colon needs a complete sentence before it, and extra information needs matching punctuation on both sides.",d:"Mark each clause as complete or incomplete before choosing punctuation."},
+ FSS:{t:"Find the subject and ignore the phrase between it and the verb when checking agreement. Then check verb tense, pronoun agreement and parallel structure.",d:"Read the sentence once without any phrases set off by commas, and check the core subject and verb."},
+ TRA:{t:"Decide how the two sentences relate first: contrast, cause, addition or example. Then pick the transition that names that relationship.",d:"Write the relationship in one word before you look at the choices."},
+ SYN:{t:"Reread what the student wants to do, then choose the answer that does exactly that using only the notes that serve it. Extra true details are a common trap.",d:"Underline the goal in the question and cross out every choice that does not match it."},
+ LE1:{t:"Isolate the variable one step at a time and plug your answer back in to check. Most misses come from distribution and sign errors.",d:"Write every step on its own line and check by substitution."},
+ LE2:{t:"Know slope-intercept form y = mx + b and slope m = (y2 - y1) / (x2 - x1). Rewrite equations into one form before comparing them.",d:"Practice turning standard form Ax + By = C into slope-intercept form."},
+ LF:{t:"Read slope as the rate of change and the intercept as the starting value. Practice writing f(x) = mx + b from a word problem.",d:"For each problem, state in words what the slope and the intercept mean."},
+ SYS:{t:"Use substitution when a variable is already isolated and elimination otherwise. No solution means parallel lines (same slope, different intercept). Infinitely many solutions means the same line.",d:"Solve each system twice, once by each method, and confirm in Desmos."},
+ INEQ:{t:"Flip the inequality sign when you multiply or divide by a negative. For graphs, test a point to see which side is shaded.",d:"Check every answer by plugging in a number that should work and one that should not."},
+ EQX:{t:"Memorize the factoring patterns: a² - b² = (a - b)(a + b) and (a + b)² = a² + 2ab + b². Review exponent rules and combining like terms.",d:"Expand your final answer back out to confirm it matches the original."},
+ NLE:{t:"Know the quadratic formula x = (-b ± √(b² - 4ac)) / 2a and the discriminant: greater than 0 gives two real solutions, equal to 0 gives one, less than 0 gives none. For a line and a curve, substitute one into the other.",d:"Graph both equations in Desmos to see how many intersections to expect."},
+ NLF:{t:"Learn vertex form y = a(x - h)² + k and exponential form y = a · bˣ. Practice reading zeros, vertex and end behavior from a graph.",d:"Use Desmos to find intercepts and the vertex, then explain what each means in the problem."},
+ RATIO:{t:"Set up unit conversions so units cancel, cross-multiply proportions, and label every quantity with its unit.",d:"Write the units next to every number before you calculate."},
+ PCT:{t:"Percent change = (new - old) / old x 100. A value that is x% more is multiplied by (1 + x/100), and x% less by (1 - x/100).",d:"Identify which quantity is the original before you start."},
+ ONEV:{t:"The mean is pulled by outliers but the median is not. A larger standard deviation means more spread, and adding a value equal to the mean leaves the mean unchanged.",d:"Predict how the mean, median and spread change before calculating anything."},
+ TWOV:{t:"Interpret the slope and intercept of a line of best fit in context, and predict by plugging x into the model. Constant differences mean linear growth, constant ratios mean exponential.",d:"Say what the slope means in one sentence using the units in the problem."},
+ PROB:{t:"Probability = favorable outcomes / total outcomes. For conditional probability, use only the group you are told about as the total, for example one row of a two-way table.",d:"Circle the 'given' group in the question and use its total as your denominator."},
+ INFER:{t:"A margin of error gives a range around the sample statistic. Conclusions apply to the whole population only when the sample was random.",d:"Compute the interval (statistic plus or minus margin) and check which choices fall inside it."},
+ CLAIM:{t:"A random sample lets you generalize to the population. Random assignment lets you claim cause and effect. Without either, the conclusion is limited.",d:"Ask two questions for every study: was it random selection, and was it random assignment?"},
+ LAT:{t:"Triangle angles sum to 180 degrees. Parallel lines cut by a transversal make equal corresponding and alternate interior angles. Similar triangles have proportional sides.",d:"Label every angle you can figure out on the diagram before solving."},
+ RTT:{t:"Know a² + b² = c², the special triangles (30-60-90 has sides x, x√3, 2x and 45-45-90 has x, x, x√2), SOH-CAH-TOA, and sin(x) = cos(90 - x).",d:"Memorize the two special triangles and the three trig ratios until you do not need the reference sheet."},
+ CIRC:{t:"The circle equation is (x - h)² + (y - k)² = r². Complete the square to find the center and radius. Arc length = (angle/360) x 2πr and sector area = (angle/360) x πr².",d:"Practice completing the square on three circle equations."},
+ AV:{t:"Review the volume formulas on the reference sheet. For scale factor k, lengths multiply by k, areas by k² and volumes by k³.",d:"Write the formula, plug in the numbers with units, then solve."}
+};
+const DOMTIPS={
+ CAS:{t:"Slow down on what the question actually asks. For vocabulary, predict a word first. For structure and purpose, name what each sentence is doing.",d:"Redo your missed questions and write one sentence explaining why the right answer works."},
+ INI:{t:"Anchor every answer in the text. Find the exact words that prove your choice and reject anything that goes beyond them.",d:"For each missed question, highlight the sentence that proves the right answer."},
+ SEC:{t:"Review the punctuation and agreement rules: subject-verb agreement, verb tense, pronouns, and how to join or separate sentences.",d:"Make a one-page rule sheet from the grammar questions you missed."},
+ EOI:{t:"Decide the goal first: the relationship between ideas for transitions, or the student's goal for synthesis questions. Then choose the answer that meets it.",d:"Write the goal in a few words before reading the choices."},
+ H:{t:"Review linear equations, systems and inequalities, and always check your answer by substitution.",d:"Redo your missed Algebra questions without looking at the solution first."},
+ P:{t:"Review factoring patterns, the quadratic formula and exponential form. Use Desmos to confirm your work.",d:"Graph each missed problem in Desmos and connect the picture to the algebra."},
+ Q:{t:"Slow down on the setup: identify what is being asked, the original quantity, and the units.",d:"Underline the question and rewrite it in your own words before calculating."},
+ S:{t:"Memorize the reference-sheet formulas and the special right triangles, and always annotate the diagram.",d:"Redraw every missed figure and label all known lengths and angles."}
+};
+function skillStats(sec){
+  const m={};
+  ST.results.filter(r=>r.m.sec===sec).forEach(r=>r.qs.forEach((q,i)=>{
+    const k=q.sk||('dom:'+q.domain);
+    const o=m[k]=m[k]||{k:q.sk||q.domain,name:q.sk?SKN[q.sk]:(SPEC[sec].domNames[q.domain]||q.domain),dom:q.domain,n:0,miss:0,loss:0,easy:0,over:0};
+    o.n++; const t=(r.qtime[i]||0)/1000; if(t>r.tgs[i]) o.over++;
+    if(!isCorrect(q,r.ans[i])){ o.miss++; o.loss+=q.diff==='E'?3:q.diff==='H'?1:2; if(q.diff==='E') o.easy++; }
+  }));
+  return Object.values(m);
+}
+function tipCol(sec){
+  const st=skillStats(sec); if(!st.length) return '';
+  const top=st.filter(o=>o.miss>0).sort((a,b)=>b.loss-a.loss||b.miss-a.miss).slice(0,3);
+  const body=top.length?top.map(o=>{
+    const tp=TIPS[o.k]||DOMTIPS[o.dom]||{t:"Review the explanations for the questions you missed in this area.",d:"Redo similar questions from the question bank."};
+    const slow=o.over>=Math.ceil(o.n/2)?`<p class="try"><b>Pacing:</b> you went over your time target on ${o.over} of ${o.n} of these. Practice them with a timer.</p>`:'';
+    return `<div class="tip"><div class="nm">${esc(o.name)}</div><div class="ms">Missed ${o.miss} of ${o.n}${o.easy?` · ${o.easy} easy`:''}</div><div class="mbar"><i style="width:${Math.round(o.miss/o.n*100)}%"></i></div><p>${tp.t}</p><p class="try"><b>Try this:</b> ${tp.d}</p>${slow}</div>`;
+  }).join(''):`<p style="margin:14px 0 0;color:var(--mute)">You answered every ${SPEC[sec].name} question correctly. Take another full test to keep it up, and work on finishing each question under its time target.</p>`;
+  const keys=top.map(o=>o.k).filter(k=>SKN[k]);
+  const prac=keys.length?`<button class="sbtn mini" data-prac="${sec}" data-keys="${keys.join(',')}" type="button" style="margin-top:18px">Practice ${keys.length>1?'these skills':'this skill'} (10 questions)</button>`:'';
+  return `<div class="panel tipcol"><h3>${SPEC[sec].name}</h3><p class="sub2">${top.length?'Your top '+top.length+' area'+(top.length>1?'s':'')+' to improve':'Nothing to fix here'}</p>${body}${prac}</div>`;
+}
+function paceChart(all){
+  const mods=all.map(r=>r.qs.map((q,i)=>{ const a=r.ans[i]; return {t:(r.qtime[i]||0)/1000,tg:r.tgs[i],ok:isCorrect(q,a),none:a===undefined||a==='',lab:`Question ${i+1}${q.skillName?' · '+q.skillName:''}`}; }));
+  const N=mods.reduce((a,m)=>a+m.length,0), gap=14, W=900, H=210, L=42, R=8, T=12, B=36;
+  const sw=(W-L-R-(mods.length-1)*gap)/N, bw=Math.min(28,Math.max(3,sw*.7));
+  const mx=Math.max(60,...mods.flat().map(b=>Math.max(b.t,b.tg)))*1.08, y=v=>T+(1-v/mx)*(H-T-B), step=mx>300?120:60;
+  let g=''; for(let v=0;v<=mx;v+=step) g+=`<line x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="gl"/><text class="ax" x="${L-6}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${fmt(v)}</text>`;
+  let x0=L, bars='', labs='';
+  mods.forEach((m,mi)=>{
+    m.forEach((b,i)=>{ const x=x0+i*sw+(sw-bw)/2, col=b.none?'#b9c1dd':b.ok?'#0f9d7a':'#d93a50';
+      bars+=`<rect x="${x.toFixed(1)}" y="${y(b.t).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1.5,(H-B)-y(b.t)).toFixed(1)}" rx="2" fill="${col}"><title>${esc(b.lab)} · ${fmt(b.t)} of ${fmt(b.tg)} · ${b.none?'Blank':b.ok?'Correct':'Wrong'}</title></rect><line x1="${(x-1.5).toFixed(1)}" x2="${(x+bw+1.5).toFixed(1)}" y1="${y(b.tg).toFixed(1)}" y2="${y(b.tg).toFixed(1)}" class="tg" stroke-width="2"/>`; });
+    const mm=all[mi].m, lab=mm.quick?'Quick practice':mm.retry?(mm.nb?'Mistake notebook':'Retry'):(mm.sec==='rw'?'Reading and Writing ':'Math ')+mm.n;
+    labs+=`<text class="ax" x="${(x0+m.length*sw/2).toFixed(1)}" y="${H-12}" text-anchor="middle">${esc(lab)}</text>`; x0+=m.length*sw+gap;
+  });
+  return `<svg class="chart pace" viewBox="0 0 ${W} ${H}" role="img" aria-label="Time spent on each question compared with its target">${g}${bars}${labs}</svg>`;
+}
+function paceInsights(all){
+  let rushed=0,over=0,slow=0,blank=0;
+  all.forEach(r=>r.qs.forEach((q,i)=>{ const a=r.ans[i], none=(a===undefined||a===''), ok=isCorrect(q,a), t=(r.qtime[i]||0)/1000, tg=r.tgs[i];
+    if(none) blank++; else if(!ok&&t<tg*.4) rushed++;
+    if(!ok&&!none&&t>tg*1.5) over++; if(ok&&t>tg*1.5) slow++; }));
+  const c=[], pl=(n,a,b)=>n>1?a:b;
+  if(rushed) c.push({n:rushed,t:'Rushed misses',d:`You missed ${rushed} ${pl(rushed,'questions','question')} in under 40% of the time target. Slow down and reread the question before you answer.`});
+  if(over) c.push({n:over,t:'Long, wrong answers',d:`You spent more than 1.5 times the target on ${over} ${pl(over,'questions','question')} and still missed ${pl(over,'them','it')}. Mark these for review and move on once you reach the target.`});
+  if(blank) c.push({n:blank,t:'Left blank',d:`${blank} ${pl(blank,'questions were','question was')} left without an answer. There is no penalty for guessing on the SAT, so always fill in an answer before time runs out.`});
+  if(slow>=2) c.push({n:slow,t:'Right but slow',d:`${slow} correct answers took more than 1.5 times the target. Practice those skills with a timer to build speed.`});
+  return c.slice(0,3);
+}
+function openReview(kind){
+  const list=[];
+  ST.results.forEach((r,ri)=>r.qs.forEach((q,i)=>{ const a=r.ans[i], t=(r.qtime[i]||0)/1000;
+    if(kind==='all'||(kind==='missed'&&!isCorrect(q,a))||(kind==='flagged'&&r.flag[i])||(kind==='slow'&&t>r.tgs[i])) list.push([ri,i]); }));
+  if(!list.length) return;
+  let pos=0; const d=modal('<div></div>'), box=d.querySelector('.modal'); box.style.maxWidth='880px';
+  const draw=keep=>{ const sc0=box.scrollTop;
+    const [ri,i]=list[pos], r=ST.results[ri], q=r.qs[i], a=r.ans[i], ok=isCorrect(q,a), none=(a===undefined||a===''), t=(r.qtime[i]||0)/1000, tg=r.tgs[i], tp=q.sk&&TIPS[q.sk];
+    box.innerHTML=`<div class="rvtop"><div><b>${pos+1} of ${list.length}</b> <span class="muted">· ${esc(r.m.label)} · Question ${i+1}${q.skillName?' · '+esc(q.skillName):''}</span></div><span class="pill ${none?'na':ok?'ok':'no'}">${none?'Blank':ok?'Correct':'Wrong'}</span></div>
+      ${q.stimulus?`<div class="stim" style="margin:14px 0">${q.stimulus}</div>`:''}<div class="stem" style="margin:14px 0">${q.stem}</div>
+      ${q.type==='mcq'?q.options.map((o,k)=>`<div class="opt ${q.correct.includes(k)?'right':(a===k?'wrong':'')}"><div class="box"><span class="let">${'ABCD'[k]}</span><span>${o}</span></div></div>`).join(''):`<p>Your answer: <b>${esc(none?'none':a)}</b></p>`}
+      <div class="fb ${ok?'ok':'no'}"><h4>${ok?'Correct':'Correct answer: '+esc(answerText(q))+((!none)?' · Your answer: '+(q.type==='mcq'?'ABCD'[a]:esc(a)):' · You left this blank')}</h4>${q.rationale?`<div class="rat">${q.rationale}</div>`:'<div>No explanation available.</div>'}</div>
+      <p style="margin:12px 0 0;color:#5f6670">Time: <b style="color:${t>tg?'#b3261e':'inherit'}">${fmt(t)}</b> of ${fmt(tg)} target${t>tg?' (over)':''}</p>
+      ${tp&&!ok?`<p style="margin:10px 0 0;font-size:14.5px"><b>Tip for this skill:</b> ${tp.t}</p>`:''}
+      ${!ok?rsChips(q):''}
+      <div class="rvnav"><button class="btn ghost" data-rvnav="-1" type="button" ${pos===0?'disabled':''}>Previous</button><button class="btn ghost" data-act="close" type="button">Close</button><button class="btn" data-rvnav="1" type="button" ${pos===list.length-1?'disabled':''}>Next</button></div>`;
+    box.querySelectorAll('[data-rvnav]').forEach(b=>{ b.onclick=()=>step(+b.dataset.rvnav); }); box.scrollTop=keep?sc0:0;
+    box.querySelectorAll('[data-rs]').forEach(b=>{ b.onclick=()=>{ const tg=ld(TG,{}); if(tg[q.id]===b.dataset.rs) delete tg[q.id]; else tg[q.id]=b.dataset.rs; sv(TG,tg); draw(true); refreshReasons(); }; });
+  };
+  const step=n=>{ const np=pos+n; if(np<0||np>=list.length) return; pos=np; draw(); };
+  ST.rv={step}; draw();
+}
+document.addEventListener('keydown',e=>{ if(!ST.rv||!document.querySelector('.ov [data-rvnav]')) return; if(e.key==='ArrowRight'){ e.preventDefault(); ST.rv.step(1); } else if(e.key==='ArrowLeft'){ e.preventDefault(); ST.rv.step(-1); } });
+function results(){
+  clearInterval(ST.tick);
+  const all=ST.results; let tq=0,tc=0,over=0,totalT=0;
+  all.forEach(r=>r.qs.forEach((q,i)=>{ tq++; if(isCorrect(q,r.ans[i])) tc++; const t=(r.qtime[i]||0)/1000; totalT+=t; if(t>r.tgs[i]) over++; }));
+  const demo=all.some(r=>r.qs.some(q=>/^demo|^imp/.test(q.id)||q.fallback));
+  const missed=tq-tc;
+  const er=estSection('rw'), em=estSection('math');
+  const tot=(er&&em)?{s:er.score+em.score,lo:er.lo+em.lo,hi:er.hi+em.hi}:null, one=er||em;
+  const hist=ld(HK,[]), pf=PF();
+  const dkeyS=tot?'total':(er?'rw':(em?'math':null)), cur=tot?tot.s:(er?er.score:(em?em.score:null));
+  let prev=null; if(dkeyS&&!demo) for(let i=hist.length-2;i>=0;i--){ if(hist[i][dkeyS]!=null&&!hist[i].demo){ prev=hist[i][dkeyS]; break; } }
+  let extra='';
+  if(prev!=null&&cur!=null){ const dl=cur-prev; extra+=`<div class="delta ${dl>=0?'up':'dn'}">${dl>0?'+':''}${dl} since your last ${tot?'full test':'estimate'}</div>`; }
+  if(tot&&pf.target){ const gp=pf.target-tot.s; extra+=`<div class="rng" style="margin-top:10px">${gp>0?gp+' points to your target of '+pf.target:'You have reached your target of '+pf.target}</div>`; }
+  const heroLeft=tot?`<div class="lbl">Estimated total score</div><div class="score"><span id="sv" data-v="${tot.s}">${tot.s}</span><small>out of 1600</small></div><div class="rng">Likely range ${tot.lo}–${tot.hi}</div>${extra}`
+    :one?`<div class="lbl">Estimated ${er?'Reading and Writing':'Math'} score</div><div class="score"><span id="sv" data-v="${one.score}">${one.score}</span><small>out of 800</small></div><div class="rng">Likely range ${one.lo}–${one.hi}</div>${extra}`
+    :`<div class="lbl">Your results</div><div class="score"><span id="sv" data-v="${tc}">${tc}</span><small>out of ${tq} correct</small></div>`;
+  const bar=(label,e)=>e?`<div class="sb"><div class="sbh"><span>${label}</span><b>${e.score}</b></div><div class="track"><i class="fill" style="width:0" data-w="${Math.max(2,(e.score-200)/6)}"></i></div><div class="sbf"><span>200</span><span>Likely ${e.lo}–${e.hi} · ${e.hard?'harder':'easier'} Module 2</span><span>800</span></div></div>`:'';
+  const modTiles=all.map(r=>{ const p=r.score/r.qs.length; return `<div class="tile"><div class="nm">${esc(SPEC[r.m.sec].name)}</div><div class="rt">${r.m.quick?'Quick practice':r.m.retry?'Retry set':'Module '+r.m.n}${r.hard!==undefined?' · '+(r.hard?'harder route':'easier route'):''}${r.timeUp?' · time ran out':''}</div><div class="v">${r.score}<small> / ${r.qs.length}</small></div><div class="pbar"><i class="${p>=.8?'ok':p<.5?'bad':''}" style="width:${Math.round(p*100)}%"></i></div></div>`; }).join('');
+  const dom={}; all.forEach(r=>r.qs.forEach((q,i)=>{ const k=r.m.sec+q.domain; const o=dom[k]=dom[k]||{n:SPEC[r.m.sec].domNames[q.domain]||q.domain,sec:SPEC[r.m.sec].name,c:0,t:0,time:0}; o.t++; if(isCorrect(q,r.ans[i])) o.c++; o.time+=(r.qtime[i]||0)/1000; }));
+  const domRows=Object.values(dom).map(d=>{ const p=d.c/d.t; return `<tr><td><b>${esc(d.n)}</b><div class="muted" style="font-size:13px">${esc(d.sec)}</div></td><td style="width:34%"><div class="pbar"><i class="${p>=.8?'ok':p<.5?'bad':''}" style="width:${Math.round(p*100)}%"></i></div></td><td>${d.c}/${d.t} · ${Math.round(p*100)}%</td><td>${fmt(d.time/d.t)}</td></tr>`; }).join('');
+  const tables=all.map((r,ri)=>`<h3 style="margin:28px 0 10px;font-size:1.1rem">${esc(r.m.label)}${r.hard!==undefined?(r.hard?' · harder module':' · easier module'):''}</h3><div class="tbwrap"><table class="fmtt rv"><tr><th>#</th><th>Content area</th><th>Skill</th><th>Level</th><th>Result</th><th>Your answer</th><th>Correct</th><th>Time</th></tr>
+    ${r.qs.map((q,i)=>{ const a=r.ans[i], ok=isCorrect(q,a), t=(r.qtime[i]||0)/1000, none=(a===undefined||a==='');
+      return `<tr data-rv="${ri}-${i}"><td>${i+1}${r.flag[i]?' ⚑':''}</td><td>${esc(SPEC[r.m.sec].domNames[q.domain]||q.domain)}</td><td>${esc(q.skillName||'—')}</td><td>${{E:'Easy',M:'Medium',H:'Hard'}[q.diff]||''}</td>
+      <td><span class="pill ${none?'na':ok?'ok':'no'}">${none?'Omitted':ok?'Correct':'Wrong'}</span></td><td>${none?'—':(q.type==='mcq'?'ABCD'[a]:esc(a))}</td><td>${esc(answerText(q))}</td>
+      <td class="${t>r.tgs[i]?'over':''}">${fmt(t)} <span class="muted">/ ${fmt(r.tgs[i])}</span></td></tr>`; }).join('')}</table></div>`).join('');
+  const secs=['rw','math'].filter(x=>all.some(r=>r.m.sec===x));
+  const skAll=secs.flatMap(skillStats).filter(o=>SKN[o.k]).sort((a,b)=>b.n-a.n).slice(0,7);
+  const skBars=(!er&&!em&&skAll.length)?`<div class="lbl sk">Accuracy by skill</div>`+skAll.map(o=>`<div class="skr"><div class="sbh"><span>${esc(o.name)}</span><b>${o.n-o.miss}/${o.n}</b></div><div class="track"><i class="fill" style="width:0" data-w="${Math.round((o.n-o.miss)/o.n*100)}"></i></div></div>`).join(''):'';
+  const insights=paceInsights(all);
+  const paceSection=`<section class="sect"><div class="wrap"><h2>Pace and focus</h2><p class="sub">Each bar is one question. Its height is the time you spent, and the dark mark is your time target.</p>
+    <div class="panel" style="padding:22px 24px"><div class="pacewrap">${paceChart(all)}</div><div class="legend2"><span><i style="background:#0f9d7a"></i>Correct</span><span><i style="background:#d93a50"></i>Wrong</span><span><i style="background:#b9c1dd"></i>Blank</span><span><i class="tk"></i>Time target</span></div></div>
+    <div class="tiles" style="margin-top:14px">${insights.length?insights.map(c=>`<div class="tile"><div class="nm">${esc(c.t)}</div><div class="v">${c.n}</div><p class="note2">${esc(c.d)}</p></div>`).join(''):`<div class="tile"><div class="nm">Steady pacing</div><p class="note2">You had no rushed or overlong misses. Keep answering each question within its time target.</p></div>`}</div><div id="reasons">${reasonsInner()}</div></div></section>`;
+  const nFlag=all.reduce((a,r)=>a+Object.keys(r.flag).filter(k=>r.flag[k]).length,0);
+  const reviewBtns=`<div class="tools" style="margin:0 0 6px">${missed?`<button class="sbtn mini" data-rvk="missed" type="button">Review ${missed} missed</button>`:''}${nFlag?`<button class="sbtn mini" data-rvk="flagged" type="button">Review ${nFlag} marked</button>`:''}${over?`<button class="sbtn mini" data-rvk="slow" type="button">Review ${over} over time</button>`:''}<button class="sbtn mini" data-rvk="all" type="button">Review all ${tq}</button></div>`;
+  const notes=(ST.qnote&&all[0].m.quick?`<div class="aside rnote">${esc(ST.qnote)}</div>`:'')+(demo?`<div class="aside rnote">Some or all questions in this test came from the built-in demo set or an imported file instead of the live College Board bank, so the estimate and tips are less meaningful.</div>`:'')
+    +(ST.dropped?`<div class="aside rnote">${ST.dropped} question(s) from the bank came back in an unexpected format and were swapped for others.</div>`:'')
+    +(tot||one?`<div class="aside rnote">The score is a rough estimate. It weights each question by difficulty and accounts for an easier or harder Module 2, but the real exam uses a confidential scoring curve. Expect about 30 points either way per section.</div>`:'');
+  const pace=tq&&over/tq>.25?`<div class="aside" style="margin-top:22px"><b>Pacing:</b> you went over your time target on ${over} of ${tq} questions (${Math.round(over/tq*100)}%). Practice the skills above with a timer on, and move on from any question that runs past its target.</div>`:'';
+  app.innerHTML=`<div class="site" id="site">
+  <nav class="nav"><div class="wrap"><div class="brand"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#0d1636"/><circle cx="9" cy="9" r="3.2" fill="#ffc83d"/><circle cx="19" cy="9" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="19" cy="19" r="3.2" fill="#fff"/></svg>SAT Simulator</div>
+  <button class="lnk thm" id="theme" type="button"></button><button class="sbtn sm line" id="prt" type="button">Print report</button><button class="sbtn sm" id="again">New test</button></div></nav>
+  <main>
+  <section class="rhero"><div class="wrap">
+    <div>${heroLeft}<div class="rstats"><div><b>${tc}/${tq}</b><span>${Math.round(tc/tq*100)}% correct</span></div><div><b>${fmt(totalT/tq)}</b><span>average time per question</span></div><div><b>${over}</b><span>over your time target</span></div></div></div>
+    <div>${bar('Reading and Writing',er)}${bar('Math',em)}${skBars}</div>
+  </div></section>
+  <div class="wrap" style="padding-top:26px"><div class="muted" style="font-size:14px;margin-bottom:12px">Question source: ${esc(ST.sourceNote)}</div>${notes}</div>
+  <section class="sect"><div class="wrap">
+    <h2>Where to gain the most points</h2>
+    <p class="sub">Ranked by the questions you missed, with easier misses counted more because they are the quickest points to win back.</p>
+    <div class="tipgrid" style="${secs.length===1?'grid-template-columns:1fr':''}">${secs.map(tipCol).join('')}</div>${pace}${missed?`<p style="margin-top:24px"><button class="sbtn big line" id="retry">Practice the ${missed} question${missed>1?'s':''} you missed</button></p>`:''}
+  </div></section>
+  ${paceSection}
+  <section class="sect"><div class="wrap"><h2>Module scores</h2><p class="sub">Questions correct in each module.</p><div class="tiles">${modTiles}</div></div></section>
+  <section class="sect"><div class="wrap"><h2>By content area</h2><p class="sub">How you did in each domain, and how long you spent per question.</p>
+    <div class="panel" style="padding:6px 22px"><table class="fmtt" style="border:0"><tr><th>Content area</th><th>Accuracy</th><th>Correct</th><th>Avg time</th></tr>${domRows}</table></div></div></section>
+  <section class="sect"><div class="wrap"><h2>Question review</h2><p class="sub">Step through your questions with explanations, or select any row to open one.</p>${reviewBtns}${tables}
+    <p style="margin-top:34px"><button class="sbtn big" id="again2">Take another test</button></p></div></section>
+  </main>
+  <footer class="foot"><div class="wrap">SAT Simulator is an independent practice tool. It is not affiliated with or endorsed by College Board. SAT is a registered trademark of College Board.</div></footer></div>`;
+  $('#again').onclick=home; $('#again2').onclick=home;
+  const rb=$('#retry'); if(rb) rb.onclick=startRetry;
+  document.querySelectorAll('[data-rvk]').forEach(b=>b.onclick=()=>openReview(b.dataset.rvk));
+  const pr=$('#prt'); if(pr) pr.onclick=()=>window.print();
+  bindTheme();
+  document.querySelectorAll('[data-prac]').forEach(b=>b.onclick=()=>startSkills(b.dataset.prac,b.dataset.keys.split(',')));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll('.fill').forEach(f=>{ f.style.width=f.dataset.w+'%'; })));
+  const svn=$('#sv'); if(svn&&!matchMedia('(prefers-reduced-motion: reduce)').matches){ const to=+svn.dataset.v, t0=performance.now(); const step=t=>{ const p=Math.min(1,(t-t0)/1100); svn.textContent=Math.round(to*(1-Math.pow(1-p,3))); if(p<1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+  document.querySelectorAll('[data-rv]').forEach(tr=>tr.onclick=()=>{
+    const [ri,i]=tr.dataset.rv.split('-').map(Number), r=all[ri], q=r.qs[i], a=r.ans[i];
+    modal(`<div class="muted">${esc(r.m.label)} · Question ${i+1}${q.skillName?' · '+esc(q.skillName):''}</div>${q.stimulus?`<div class="stim" style="margin:12px 0">${q.stimulus}</div>`:''}<div class="stem" style="margin:12px 0">${q.stem}</div>
+      ${q.type==='mcq'?q.options.map((o,k)=>`<div class="opt ${q.correct.includes(k)?'right':(a===k?'wrong':'')}"><div class="box"><span class="let">${'ABCD'[k]}</span><span>${o}</span></div></div>`).join(''):`<p>Your answer: <b>${esc(a||'—')}</b></p>`}
+      <div class="fb ${isCorrect(q,a)?'ok':'no'}"><h4>Correct answer: ${esc(answerText(q))}</h4>${q.rationale?`<div class="rat">${q.rationale}</div>`:'<div>No explanation available.</div>'}</div><br><button class="btn" data-act="close">Close</button>`);
+  });
+}
+applyTheme();
+home();
+</script>
+</body>
+</html>
