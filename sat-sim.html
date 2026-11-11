@@ -330,6 +330,10 @@ mark.hl{background:#ffe27a;color:inherit;padding:0;border-radius:2px}
   .pacewrap{overflow:visible}
 }
 .gl{stroke:var(--line)}
+.imgfail{display:inline-block;padding:6px 10px;border:1px dashed #8a93ad;border-radius:6px;font-size:13px;color:#5a6482}
+.resume.daily{border-color:var(--blue)}
+.opt img,.stem img,.stim img{height:auto}
+.stim svg,.stem svg,.opt svg{max-width:100%;height:auto}
 .rt{stroke:var(--line)}
 .rtx{fill:var(--ink)}
 .tg{stroke:var(--ink)}
@@ -413,27 +417,41 @@ const ST = {
 };
 try{ const sv=JSON.parse(localStorage.getItem('satTimers')||'null'); if(sv) Object.keys(DEF_TIMERS).forEach(k=>{ if(+sv[k]>0) ST.cfg.timers[k]=+sv[k]; }); }catch(e){}
 function saveTimers(){ try{ localStorage.setItem('satTimers',JSON.stringify(ST.cfg.timers)); }catch(e){} }
-const HK='satHistory', SKK='satSkills', MK='satMissed', TG='satTags', SESSION='satSession';
+const HK='satHistory', SKK='satSkills', MK='satMissed', TG='satTags', SESSION='satSession', SEENK='satSeen', SRSK='satSRS', BADK='satBadQ';
 function ld(k,d){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?d:v; }catch(e){ return d; } }
 function sv(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
-ST.quick=Object.assign({sec:'rw',n:10,off:[],dOff:[]},ld('satQuick',{}));
+ST.quick=Object.assign({sec:'rw',n:10,off:[],dOff:[],pool:'mix'},ld('satQuick',{}));
 if(!SPEC[ST.quick.sec]) ST.quick.sec='rw';
 if(!Array.isArray(ST.quick.off)) ST.quick.off=[];
 if(!Array.isArray(ST.quick.dOff)) ST.quick.dOff=[];
 function saveQuick(){ sv('satQuick',ST.quick); }
 const modMin=m=>m.minutes||SPEC[m.sec].minutes;
+// ----- questions you have already answered (omitted questions do not count) -----
+const exemptId=id=>/^demo|^imp/.test(String(id));
+function seenMap(){ return ST._seen||(ST._seen=ld(SEENK,{})); }
+const isSeen=q=>!exemptId(q.id)&&!q.fallback&&!!seenMap()[q.id];
+const seenCount=()=>Object.keys(seenMap()).length;
+function trimSeen(o){ const ks=Object.keys(o); if(ks.length>8000){ ks.sort((a,b)=>o[a][0]-o[b][0]).slice(0,ks.length-8000).forEach(k=>{ delete o[k]; }); } return o; }
 function allKeys(sec){ return SK.filter(r=>r[1]===sec).map(r=>r[0]); }
 const $ = s => document.querySelector(s);
 const app = $('#app');
 const fmt = s => { s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rnd = a => a[Math.floor(Math.random()*a.length)];
-function clean(html){ // strip scripts / inline handlers from remote HTML
+const QBASE='https://qbank-api.collegeboard.org';
+function clean(html){ // strip scripts / inline handlers from remote HTML, and repair links
   const d=document.createElement('div'); d.innerHTML=html||'';
-  d.querySelectorAll('script,iframe,object,embed,link,style').forEach(n=>n.remove());
+  d.querySelectorAll('script,iframe,object,embed,link,style,base,meta,form').forEach(n=>n.remove());
   d.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{ if(/^on/i.test(a.name)||/^\s*javascript:/i.test(a.value)) n.removeAttribute(a.name); }));
+  d.querySelectorAll('img').forEach(im=>{ const src=im.getAttribute('src')||im.getAttribute('data-src')||'';
+    if(/^\/(?!\/)/.test(src)) im.setAttribute('src',QBASE+src);
+    else if(!src&&im.getAttribute('srcset')) im.setAttribute('src',im.getAttribute('srcset').split(/\s+/)[0]);
+    if(!im.hasAttribute('alt')) im.setAttribute('alt','Figure'); });
+  d.querySelectorAll('a[href]').forEach(a=>{ a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer'); });
   return d.innerHTML;
 }
+// a figure that fails to load is replaced with a note instead of a broken icon
+document.addEventListener('error',e=>{ const t=e.target; if(t&&t.tagName==='IMG'&&!t.dataset.failed){ t.dataset.failed='1'; const s=document.createElement('span'); s.className='imgfail'; s.textContent='A figure could not be loaded'; t.replaceWith(s); } },true);
 
 // ---------- demo pool (ORIGINAL practice items, used only if the bank can't be reached) ----------
 // [key, section, domain, display name, matcher]  (order matters for matching)
@@ -519,7 +537,7 @@ async function getList(sec){
       const raw=await post('get-questions',{asmtEventId:99,test:SPEC[sec].test,domain:doms.join(',')});
       const arr=Array.isArray(raw)?raw:(raw.questions||raw.data||[]);
       list=arr.map(q=>({
-        id:q.external_id||q.externalId||q.questionId||q.id,
+        id:q.external_id||q.externalId||q.questionId||q.id||q.ibn, ext:q.external_id||q.externalId||null, ibn:q.ibn||q.ibn_id||null,
         domain:q.primary_class_cd||q.domain||q.primaryClassCd,
         diff:normDiff(q.difficulty), section:sec, meta:q, skill:SKT(q), sk:skillKey(SKT(q),sec)
       })).filter(q=>q.id&&doms.includes(q.domain));
@@ -542,10 +560,22 @@ function category(q){
   if(/central ideas|inferences|cross-text|command of evidence|\bcid\b|\binf\b|\bctc\b|\bcoe\b/.test(s)||q.domain==='INI') return 'long';
   return 'rest';
 }
+// Loads one question, trying every route the bank is known to use, and returns the first one that parses.
+async function fetchRaw(item){
+  const tries=[];
+  if(item.ext||!item.ibn) tries.push(()=>post('get-question',{external_id:item.ext||item.id}));
+  if(item.ibn) tries.push(()=>fetch('https://saic.collegeboard.org/disclosed/'+encodeURIComponent(item.ibn)+'.json').then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }));
+  let first=null,err=null;
+  for(const t of tries){
+    try{ const d=await t(); if(first===null) first=d; const q=norm(d,item); if(valid(q)) return {d,q}; }catch(e){ err=e; }
+  }
+  if(first!==null) return {d:first,q:norm(first,item)};
+  throw err||new Error('no data');
+}
 async function getQ(item){
   let q;
   if(item.full){ q=Object.assign({id:item.id,domain:item.domain,diff:item.diff,section:item.section,skill:item.skill},item.full,{options:(item.full.options||[]).map(esc)}); }
-  else { const d=await post('get-question',{external_id:item.id}); if(!ST.rawSample) ST.rawSample=d; q=norm(d,item); }
+  else { const r=await fetchRaw(item); if(!ST.rawSample) ST.rawSample=r.d; q=r.q; if(!valid(q)) q.rawDump=JSON.stringify(r.d).slice(0,2200); }
   q.sk=skillKey(q.skill,q.section)||inferSk(q);
   if(q.sk==='COET'&&/uses data|data from the (table|graph|chart)|data in the (table|graph|chart)/i.test(strip(q.stem))) q.sk='COEQ';
   q.skillName=q.sk?SKN[q.sk]:String(q.skill||'').trim();
@@ -562,39 +592,73 @@ function inferSk(q){
 }
 function norm(d,item){
   if(Array.isArray(d)) d=d[0]||{};
-  d=d.question||d.data||d.result||d;
-  const stem=pick(d,'stem','prompt','question','questionText','question_text','body');
-  const stim=pick(d,'stimulus','passage','context','stimulus_html');
-  let opts=pick(d,'answerOptions','answer_options','options','choices');
-  if(!Array.isArray(opts)) opts=(opts&&typeof opts==='object')?Object.values(opts):[];
-  if(!opts.length) opts=Object.values(d).find(v=>Array.isArray(v)&&v.length>=2&&v.every(x=>x&&typeof x==='object'&&('content' in x||'text' in x)))||[];
-  const isSpr=String(d.type||d.questionType||'').toLowerCase().includes('spr')||opts.length<2;
+  for(let g=0;g<3;g++){ const w=d&&[d.question,d.item,d.data,d.result,d.payload,d.questionData].find(x=>x&&typeof x==='object'&&!Array.isArray(x)); if(w) d=w; else break; }
+  d=d||{};
+  // the bank nests the choices, key and rationale inside an `answer` object; lift them to the top level
+  if(d.answer&&typeof d.answer==='object'&&!Array.isArray(d.answer)){ d=Object.assign({},d,d.answer); delete d.answer; }
+  let stem=pick(d,'stem','prompt','question','questionText','question_text','questionStem');
+  let stim=pick(d,'stimulus','passage','context','stimulus_html','stimulusHtml','body');
+  let opts=pick(d,'answerOptions','answer_options','options','choices','answerChoices','answers');
+  if(!Array.isArray(opts)) opts=(opts&&typeof opts==='object')?Object.entries(opts).map(([k,v])=>(v&&typeof v==='object')?Object.assign({id:k},v):{id:k,content:v}):[];
+  const oc=o=>typeof o==='string'?o:((o&&(o.content??o.text??o.body??o.value??o.label))||'');
+  if(!opts.length) opts=Object.values(d).find(v=>Array.isArray(v)&&v.length>=2&&v.every(x=>typeof x==='string'||(x&&typeof x==='object'&&('content' in x||'text' in x||'body' in x))))||[];
+  const kind=String(d.type||d.questionType||d.question_type||d.style||'').toLowerCase();
+  const isSpr=!/multiple/.test(kind)&&/spr|student|grid|free|produced|response/.test(kind)||opts.length<2;
+  if(typeof stem!=='string') stem=''; if(typeof stim!=='string') stim='';
+  if(!hasText(stem)&&hasText(stim)){ stem=stim; stim=''; }   // some items keep the whole question in the stimulus
   const q={id:item.id,section:item.section,domain:item.domain,diff:item.diff,type:isSpr?'spr':'mcq',
     skill:(String(item.skill||'').trim()||SKT(d)),
-    stimulus:clean(typeof stim==='string'?stim:''),stem:clean(typeof stem==='string'?stem:''),rationale:clean(String(pick(d,'rationale','explanation')||''))};
+    stimulus:clean(stim),stem:clean(stem),rationale:clean(String(pick(d,'rationale','explanation')||''))};
   const rat=strip(q.rationale);
-  const srcs=[d.correct_answer,d.correctAnswer,d.keys,d.key,d.answer].filter(x=>x!=null&&x!=='').map(x=>[].concat(x));
+  const flat=x=>[].concat(x).map(e=>(e&&typeof e==='object')?(e.id??e.key??e.value??e.content??e.text??''):e);
+  const named=[d.correct_answer,d.correctAnswer,d.correct_answers,d.correctAnswers,d.keys,d.key,d.answer,d.answerKey,d.answer_key,d.correct_choice,d.correctChoice,d.correct_option,d.correctOption,d.correct];
+  const extra=Object.keys(d).filter(k=>/correct|answer_?key|^keys?$/i.test(k)&&!/rationale|explanation/i.test(k)).map(k=>d[k]);   // any other key that looks like the answer
+  const srcs=named.concat(extra)
+    .filter(x=>x!=null&&x!==''&&typeof x!=='boolean').map(flat).filter(a=>a.length&&a.every(e=>e!==''&&e!=null));
   q.correct=[];
   if(!isSpr){
-    const cont=opts.map(o=>typeof o==='string'?o:(o.content||o.text||o.value||''));
-    const ids=opts.map((o,k)=>(o&&o.id!=null)?o.id:'ABCD'[k]);
+    const cont=opts.map(oc);
+    const ids=opts.map((o,k)=>(o&&typeof o==='object'&&o.id!=null)?o.id:'ABCDEF'[k]);
     q.options=cont.map(clean);
-    const toIdx=c=>{ const t=String(c).trim(); if(/^[A-Da-d]$/.test(t)) return 'ABCD'.indexOf(t.toUpperCase());
+    const toIdx=c=>{ const t=String(c).trim(); if(/^[A-Fa-f]$/.test(t)) return 'ABCDEF'.indexOf(t.toUpperCase());
       let j=ids.indexOf(c); if(j<0) j=ids.map(String).indexOf(t); if(j<0) j=cont.findIndex(x=>strip(x)===strip(t)); return j; };
     for(const sr of srcs){ const idx=sr.map(toIdx).filter(i=>i>=0); if(idx.length){ q.correct=idx; break; } }
-    if(!q.correct.length){ const m=rat.match(/(?:choice|option)\s+([A-D])\s+is\s+(?:the\s+)?(?:best|correct)/i); if(m) q.correct=['ABCD'.indexOf(m[1].toUpperCase())]; }
+    if(!q.correct.length){ const fl=opts.map((o,k)=>(o&&typeof o==='object'&&(o.correct===true||o.isCorrect===true||o.is_correct===true||o.right===true))?k:-1).filter(k=>k>=0); if(fl.length) q.correct=fl; }
+    if(!q.correct.length){ const m=rat.match(/(?:choice|option)\s+([A-D])\s+is\s+(?:the\s+)?(?:best|correct)/i)||rat.match(/correct answer is\s+(?:choice|option)?\s*\(?([A-D])\)?(?![a-z])/i); if(m) q.correct=['ABCD'.indexOf(m[1].toUpperCase())]; }
   } else {
     q.options=[];
-    for(const sr of srcs){ const v=sr.map(x=>String(x).trim()).filter(Boolean); if(v.length){ q.correct=v; break; } }
-    if(!q.correct.length){ const m=rat.match(/correct answer is\s+(-?\d+(?:\.\d+)?(?:\/\d+)?)/i); if(m) q.correct=[m[1]]; }
+    for(const sr of srcs){
+      let v=sr.map(x=>String(x).trim().replace(/[−–]/g,'-')).filter(Boolean);
+      v=v.flatMap(x=>/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(x)?[x]:x.split(/\s*(?:,|;|\||\bor\b)\s*/)).map(x=>x.trim()).filter(Boolean);
+      if(v.length){ q.correct=v; break; } }
+    if(!q.correct.length){ const m=rat.match(/correct answer is\s+(-?[\d,]*\.?\d+(?:\/\d+)?)/i); if(m) q.correct=[m[1].replace(/,(?=\d{3})/g,'')]; }
   }
   return q;
 }
 function valid(q){
-  if(!hasText(q.stem)) return false;
+  if(!(hasText(q.stem)||hasText(q.stimulus))) return false;
   if(!q.correct||!q.correct.length) return false;
   if(q.type==='mcq') return q.options.length>=2&&q.options.every(hasText)&&q.correct.every(i=>i>=0&&i<q.options.length);
   return !q.correct.some(c=>/^[A-D]$/i.test(c));
+}
+function whyInvalid(q){
+  if(!q) return 'the request failed';
+  if(!(hasText(q.stem)||hasText(q.stimulus))) return 'no question text was found';
+  if(!q.correct||!q.correct.length) return 'no correct answer was found';
+  if(q.type==='mcq'){ if(q.options.length<2) return 'fewer than two answer choices were found'; if(!q.options.every(hasText)) return 'an answer choice was empty'; return 'the correct answer did not match any choice'; }
+  return 'the free-response answer was not recognised';
+}
+function logBad(item,q,err){
+  const log=ld(BADK,[]).filter(x=>x.id!==item.id);
+  log.push({id:item.id,ibn:item.ibn||null,sec:item.section,t:Date.now(),why:q?whyInvalid(q):String((err&&err.message)||err||'failed'),raw:(q&&q.rawDump)||''});
+  sv(BADK,log.slice(-12));
+}
+function badReport(){
+  const log=ld(BADK,[]);
+  const body=log.length?log.slice().reverse().map(x=>`<div style="border-top:1px solid #dde2ee;padding:10px 0"><b>${esc(x.id)}</b> · ${esc(x.sec||'')} · ${esc(x.why)}${x.raw?`<pre style="white-space:pre-wrap;font-size:12px;background:#f3f5f9;color:#222;padding:8px;border-radius:8px;max-height:150px;overflow:auto;margin:8px 0 0">${esc(x.raw.slice(0,900))}</pre>`:''}</div>`).join(''):'<p>No questions have been skipped yet.</p>';
+  const d=modal(`<h3>Skipped-question report</h3><p>Questions the app could not read are swapped for others, and the reason is kept here. Copy the report if you want help adding support for a format.</p><div style="max-height:52vh;overflow:auto">${body}</div><p style="margin-top:14px"><button class="btn" id="badcp" type="button">Copy report</button> <button class="btn ghost" id="badclr" type="button">Clear</button> <button class="btn ghost" data-act="close" type="button">Close</button></p>`);
+  d.querySelector('#badcp').onclick=()=>{ try{ navigator.clipboard.writeText(JSON.stringify(log,null,1)).then(()=>toast('Report copied'),()=>toast('Could not copy')); }catch(e){ toast('Could not copy'); } };
+  d.querySelector('#badclr').onclick=()=>{ try{ localStorage.removeItem(BADK); }catch(e){} d.remove(); };
 }
 async function diagnose(){
   const d=modal('<h3>Question bank diagnostics</h3><p>Working…</p>');
@@ -612,10 +676,11 @@ async function fetchValid(it,list,m){
   const tried=new Set(); let cur=it;
   for(let a=0;a<6;a++){
     tried.add(cur.id);
-    try{ const q=await getQ(cur); if(valid(q)) return q; ST.dropped++; console.warn('Skipped unparseable question',cur.id,q); }
-    catch(e){ ST.dropped++; console.warn('Fetch failed',cur.id,e); }
+    try{ const q=await getQ(cur); if(valid(q)) return q; ST.dropped++; logBad(cur,q); console.warn('Skipped unparseable question',cur.id,q); }
+    catch(e){ ST.dropped++; logBad(cur,null,e); console.warn('Fetch failed',cur.id,e); }
     let alt=list.filter(x=>x.domain===it.domain&&it.sk&&x.sk===it.sk&&!tried.has(x.id)&&!ST.used.has(x.id));
     if(!alt.length) alt=list.filter(x=>x.domain===it.domain&&!tried.has(x.id)&&!ST.used.has(x.id));
+    if(m.pool!=='seen'){ const fa=alt.filter(x=>!isSeen(x)); if(fa.length) alt=fa; }
     if(!alt.length) break;
     cur=rnd(alt); ST.used.add(cur.id);
   }
@@ -654,7 +719,7 @@ function orderModule(sec,out){
   return sh.sort((a,b)=>RW_DOM.indexOf(a.domain)-RW_DOM.indexOf(b.domain)||((RW_SKILL.indexOf(a.sk)+1)||99)-((RW_SKILL.indexOf(b.sk)+1)||99));
 }
 // ~75% multiple choice / ~25% student-produced response (16 or 17 MC out of 22)
-async function enforceTypes(out,list){
+async function enforceTypes(out,list,pool){
   const total=out.length, mc=Math.random()<.5?Math.floor(total*.75):Math.ceil(total*.75), sprT=total-mc;
   const inMod=new Set(out.map(q=>q.id)), tried=new Set();
   for(let tries=0;tries<45;tries++){
@@ -663,11 +728,15 @@ async function enforceTypes(out,list){
     const ks=out.map((q,k)=>k).filter(k=>out[k].type!==need&&!out[k].fallback);
     if(!ks.length) return;
     const k=rnd(ks), q0=out[k];
-    const fresh=x=>!inMod.has(x.id)&&!tried.has(x.id);
-    let cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.sk&&x.sk===q0.sk&&x.diff===q0.diff);
-    if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.sk&&x.sk===q0.sk);
-    if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.diff===q0.diff);
-    if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain);
+    const base=x=>!inMod.has(x.id)&&!tried.has(x.id), pref=x=>pool==='seen'?isSeen(x):pool==='mix'?true:!isSeen(x);
+    let cand=[];
+    for(const fresh of [x=>base(x)&&pref(x)&&!ST.used.has(x.id),x=>base(x)&&!ST.used.has(x.id),base]){   // questions that fit the pool first, anything else only if none fit
+      cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.sk&&x.sk===q0.sk&&x.diff===q0.diff);
+      if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.sk&&x.sk===q0.sk);
+      if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain&&x.diff===q0.diff);
+      if(!cand.length) cand=list.filter(x=>fresh(x)&&x.domain===q0.domain);
+      if(cand.length) break;
+    }
     if(!cand.length) continue;
     const it=rnd(cand); tried.add(it.id);
     try{ const q=await getQ(it); if(valid(q)&&q.type===need){ out[k]=q; inMod.add(q.id); ST.used.add(q.id); } }catch(e){}
@@ -691,11 +760,13 @@ async function buildModule(m){
     for(const [key,n] of Object.entries(alloc)){
       for(let i=0;i<n;i++){
         // prefer this skill, then items whose skill is unknown, then anything in the domain
-        const free=q=>q.domain===dom&&!chosen.includes(q);
-        let pool=list.filter(q=>free(q)&&q.sk===key&&!ST.used.has(q.id));
-        if(!pool.length) pool=list.filter(q=>free(q)&&q.sk===key);
-        if(!pool.length) pool=list.filter(q=>free(q)&&!q.sk&&!ST.used.has(q.id));
-        if(!pool.length) pool=list.filter(q=>free(q)&&!ST.used.has(q.id));
+        const free=q=>q.domain===dom&&!chosen.includes(q), nu=q=>!ST.used.has(q.id), fr=q=>nu(q)&&!isSeen(q);
+        // never-seen questions first (same skill, then any skill in the domain), then seen ones as a last resort
+        let pool=list.filter(q=>free(q)&&q.sk===key&&fr(q));
+        if(!pool.length) pool=list.filter(q=>free(q)&&!q.sk&&fr(q));
+        if(!pool.length) pool=list.filter(q=>free(q)&&fr(q));
+        if(!pool.length) pool=list.filter(q=>free(q)&&q.sk===key&&nu(q));
+        if(!pool.length) pool=list.filter(q=>free(q)&&nu(q));
         if(!pool.length) pool=list.filter(free);
         if(!pool.length) pool=list.filter(q=>!chosen.includes(q));
         if(!pool.length) pool=list.slice();
@@ -710,18 +781,26 @@ async function buildModule(m){
   async function worker(){ while(idx<chosen.length){ const k=idx++; out[k]=await fetchValid(chosen[k],list,m); } }
   await Promise.all(Array.from({length:6},worker));
   if(m.sec==='math') await enforceTypes(out,list);
+  ST.repeats=(ST.repeats||0)+out.filter(isSeen).length;
   out.forEach(q=>{ if(q.sk) ST.skillUse[q.sk]=(ST.skillUse[q.sk]||0)+1; });
   return orderModule(m.sec,out);
 }
 
 // ---------- grading ----------
-function num(s){ s=String(s).trim().replace(/\s+/g,''); if(/^-?\d*\.?\d+$/.test(s)) return parseFloat(s);
-  let m=s.match(/^(-?\d+)\/(\d+)$/); if(m&&+m[2]) return +m[1]/+m[2]; return null; }
+function num(s){ s=String(s).trim().replace(/[−–]/g,'-').replace(/\s+/g,''); if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s=s.replace(/,/g,'');
+  if(/^[-+]?(\d+\.?\d*|\.\d+)$/.test(s)) return parseFloat(s);
+  const m=s.match(/^([-+]?\d+)\/(\d+)$/); if(m&&+m[2]) return +m[1]/+m[2]; return null; }
 function isCorrect(q,a){
   if(a===undefined||a===null||a==='') return false;
   if(q.type==='mcq') return q.correct.includes(a);
-  const v=num(a);
-  return q.correct.some(c=>{const cv=num(c); return (v!==null&&cv!==null)?Math.abs(v-cv)<1e-6:String(a).trim()===String(c).trim();});
+  const v=num(a), as=String(a).trim().replace(/[−–]/g,'-');
+  return q.correct.some(c=>{ const cv=num(c);
+    if(v===null||cv===null) return as===String(c).trim();
+    if(Math.abs(v-cv)<1e-6) return true;
+    // the real exam accepts a rounded or truncated decimal when the exact value (such as 2/3) does not fit the grid
+    const m=as.match(/^-?\d*\.(\d+)$/);
+    if(m&&m[1].length>=3&&m[1].length<=4){ const d=m[1].length, sc=cv*Math.pow(10,d); if(Math.abs(sc-Math.round(sc))>1e-6&&Math.abs(v-cv)<Math.pow(10,-d)) return true; }
+    return false; });
 }
 const answerText=q=>q.type==='mcq'?q.correct.map(i=>'ABCD'[i]).join(' or '):q.correct.join(' or ');
 
@@ -738,7 +817,7 @@ function setPF(k,v){ const o=ld('satPrefs',{}); o[k]=v; sv('satPrefs',o); }
 function addDaily(n){ const d=ld('satDaily',{}), k=dkey(new Date()); d[k]=(d[k]||0)+n; const ks=Object.keys(d).sort(); ks.slice(0,Math.max(0,ks.length-120)).forEach(x=>{ delete d[x]; }); sv('satDaily',d); }
 function todayCount(){ return ld('satDaily',{})[dkey(new Date())]||0; }
 function streak(){ const d=ld('satDaily',{}), t=new Date(); if(!(d[dkey(t)]>0)) t.setDate(t.getDate()-1); let n=0; while(d[dkey(t)]>0){ n++; t.setDate(t.getDate()-1); } return n; }
-function todayChip(){ const pf=PF(), t=todayCount(), n=streak(); if(!t&&!n) return ''; return `<div class="chipline"><span class="pillx"><b>${t}</b> of ${pf.goal} questions today</span>${n?`<span class="pillx"><b>${n}</b>-day streak</span>`:''}</div>`; }
+function todayChip(){ const pf=PF(), t=todayCount(), n=streak(); if(!t&&!n) return ''; return `<div class="chipline"><span class="pillx"><b>${t}</b> of ${pf.goal} correct today</span>${n?`<span class="pillx"><b>${n}</b>-day streak</span>`:''}</div>`; }
 function ring(p){ const C=2*Math.PI*34, f=Math.min(1,p)*C; return `<svg class="ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="rt" cx="40" cy="40" r="34" fill="none" stroke-width="9"/><circle cx="40" cy="40" r="34" fill="none" stroke="${p>=1?'#0f9d7a':'#3a4ff0'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${f.toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 40 40)"/><text class="rtx" x="40" y="45" text-anchor="middle" font-size="17" font-weight="800">${Math.round(Math.min(1,p)*100)}%</text></svg>`; }
 function lineChart(pts,target){
   const W=520,H=210,L=46,R=18,T=16,B=30;
@@ -760,7 +839,8 @@ function accChart(rows){
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Accuracy by session">${g}${bars}<text class="ax" x="${L}" y="${H-8}">Oldest</text><text class="ax" x="${W-R}" y="${H-8}" text-anchor="end">Latest</text></svg>`;
 }
 function planItems(){
-  const out=[], nb=ld(MK,[]), cnt=x=>nb.filter(q=>q.section===x).length;
+  const out=[], nb=ld(MK,[]), cnt=x=>nb.filter(q=>q.section===x).length, nd=srsDue().length;
+  if(nd) out.push({t:`Review ${nd} saved question${nd>1?'s':''} that are due`,d:'Spaced review of your earlier misses',a:'daily'});
   ['rw','math'].forEach(x=>{ if(cnt(x)) out.push({t:`Redo ${Math.min(15,cnt(x))} ${SPEC[x].name} mistakes`,d:'Questions you missed before',a:'nb:'+x}); });
   ['rw','math'].forEach(x=>{ const w=weakList(x); if(w.length) out.push({t:`Practice your weakest ${SPEC[x].name} skills`,d:w.slice(0,2).map(o=>SKN[o.k]).join(', '),a:'weak:'+x}); });
   if(!out.length) out.push({t:'Start with a 10-question quick set',d:'Choose a subject and see where you stand',a:'quick'});
@@ -769,7 +849,7 @@ function planItems(){
 function progressHTML(){
   const hist=ld(HK,[]), real=hist.filter(h=>!h.demo), pf=PF(), t=todayCount(), n=streak(), sks=ld(SKK,{});
   const planHTML=planItems().map(o=>`<div class="pl"><div><b>${esc(o.t)}</b><span>${esc(o.d)}</span></div><button class="sbtn mini" data-plan="${o.a}" type="button">Start</button></div>`).join('');
-  const today=`<div class="panel today"><div class="ringrow">${ring(pf.goal?t/pf.goal:0)}<div><div class="r1"><b>${t}</b> of ${pf.goal} questions today</div><div class="muted">${n?`${n}-day streak. Keep it going.`:'Answer a question today to start a streak.'}</div></div></div><h4>Suggested next</h4>${planHTML}</div>`;
+  const today=`<div class="panel today"><div class="ringrow">${ring(pf.goal?t/pf.goal:0)}<div><div class="r1"><b>${t}</b> of ${pf.goal} correct answers today</div><div class="muted">${n?`${n}-day streak. Keep it going.`:'Get a question right today to start a streak.'}</div></div></div><h4>Suggested next</h4>${planHTML}</div>`;
   const totals=real.filter(h=>h.total!=null).slice(-10).map(h=>({v:h.total,label:new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}));
   let trend;
   if(totals.length>=2) trend=`<h4>Estimated total score</h4>${lineChart(totals,pf.target)}`;
@@ -786,8 +866,8 @@ function progressHTML(){
   const map=['rw','math'].map(sec=>`<div class="smsec"><h4>${SPEC[sec].name}</h4>${Object.keys(SPEC[sec].dist).map(d=>`<div class="smd"><div class="smdn">${SPEC[sec].domNames[d]}</div><div class="smg">${SK.filter(r=>r[1]===sec&&r[2]===d).map(r=>{
     const o=sks[r[0]]||{n:0,miss:0}, q=o.n?(o.n-o.miss)/o.n:null, cls=q==null?'na':q<.5?'lo':q<.8?'mid':'hi';
     return `<button class="smt ${cls}" data-skill="${r[0]}" type="button"><span class="smn">${esc(r[3])}</span><span class="smb"><i style="width:${q==null?0:Math.round(q*100)}%"></i></span><span class="smm">${q==null?'Not practiced yet':Math.round(q*100)+'% correct · '+o.n+' seen'}</span></button>`; }).join('')}</div></div>`).join('')}</div>`).join('');
-  const goals=`<div class="panel goals"><div class="flds"><label class="fld"><span>Target total score</span><span class="inp"><input type="number" id="gt" min="400" max="1600" step="10" value="${pf.target||''}" placeholder="1400"><em>of 1600</em></span></label><label class="fld"><span>Daily goal</span><span class="inp"><input type="number" id="gd" min="1" max="500" value="${pf.goal}"><em>questions</em></span></label></div>
-    <div class="tools"><button class="sbtn mini" id="exp" type="button">Export progress</button><button class="sbtn mini" id="imq" type="button">Import progress</button><button class="sbtn mini" id="clr" type="button">Clear saved progress</button></div></div>`;
+  const goals=`<div class="panel goals"><div class="flds"><label class="fld"><span>Target total score</span><span class="inp"><input type="number" id="gt" min="400" max="1600" step="10" value="${pf.target||''}" placeholder="1400"><em>of 1600</em></span></label><label class="fld"><span>Daily goal</span><span class="inp"><input type="number" id="gd" min="1" max="500" value="${pf.goal}"><em>correct a day</em></span></label></div>
+    <div class="tools"><button class="sbtn mini" id="exp" type="button">Export progress</button><button class="sbtn mini" id="imq" type="button">Import progress</button><button class="sbtn mini" id="clr" type="button">Clear saved progress</button><span class="tag">${seenCount()} questions seen</span><span class="tag">${srsDue().length} due for review</span><button class="sbtn mini" id="clrs" type="button">Reset seen questions</button></div></div>`;
   return `<section class="sect" id="progress"><div class="wrap"><h2>Your progress</h2><p class="sub">Saved in this browser. Set a goal, keep a streak and see which skills need work.</p>
     <div class="dash">${today}<div class="panel trend">${trend}</div></div>
     <h3 class="h3s">Skill map</h3><p class="sub" style="margin-bottom:14px">Your accuracy on every skill. Select one for a tip and a 10-question set on just that skill.</p>
@@ -795,7 +875,7 @@ function progressHTML(){
     <div class="prog" style="margin-top:22px">${histHTML||'<div></div>'}<div class="panel" style="padding:24px 26px">${wk('rw')}${wk('math')}</div></div>
     ${nbHTML}${allReasonsHTML()}${goals}</div></section>`;
 }
-const PKEYS=[HK,SKK,MK,TG,'satDaily','satPrefs','satQuick','satTimers'];
+const PKEYS=[HK,SKK,MK,TG,SEENK,SRSK,'satDaily','satPrefs','satQuick','satTimers'];
 function exportProgress(){
   const o={app:'sat-simulator',v:1,data:{}}; PKEYS.forEach(k=>{ const v=ld(k,null); if(v!=null) o.data[k]=v; });
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'})); a.download='sat-simulator-progress-'+dkey(new Date())+'.json';
@@ -804,8 +884,8 @@ function exportProgress(){
 function importProgress(){
   const i=document.createElement('input'); i.type='file'; i.accept='.json,application/json';
   i.onchange=async()=>{ try{ const o=JSON.parse(await i.files[0].text()); if(o.app!=='sat-simulator'||!o.data) throw new Error('This is not a SAT Simulator progress file.');
-    if(!confirm('Replace your saved progress with the contents of this file?')) return;
-    PKEYS.forEach(k=>{ if(o.data[k]!==undefined) sv(k,o.data[k]); }); location.reload(); }catch(e){ alert('Could not import that file: '+e.message); } };
+    if(!confirm('Replace your saved progress with the contents of this file? Questions you have seen are merged, not replaced.')) return;
+    PKEYS.forEach(k=>{ if(o.data[k]===undefined) return; if(k===SEENK){ const cur=ld(SEENK,{}), inc=o.data[k]||{}; Object.keys(inc).forEach(id=>{ if(!cur[id]||(inc[id][0]||0)>(cur[id][0]||0)) cur[id]=inc[id]; }); sv(k,trimSeen(cur)); } else sv(k,o.data[k]); }); location.reload(); }catch(e){ alert('Could not import that file: '+e.message); } };
   i.click();
 }
 function skillModal(k){
@@ -822,13 +902,14 @@ function bindProgress(){
   document.querySelectorAll('[data-weak]').forEach(b=>b.onclick=()=>startWeak(b.dataset.weak));
   document.querySelectorAll('[data-nb]').forEach(b=>b.onclick=()=>startNotebook(b.dataset.nb));
   document.querySelectorAll('[data-skill]').forEach(b=>b.onclick=()=>skillModal(b.dataset.skill));
-  document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>{ const [a,x]=b.dataset.plan.split(':'); if(a==='nb') startNotebook(x); else if(a==='weak') startWeak(x); else { const el=document.getElementById(a==='quick'?'quick':'setup'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); } });
+  document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>{ const [a,x]=b.dataset.plan.split(':'); if(a==='daily') startDaily(); else if(a==='nb') startNotebook(x); else if(a==='weak') startWeak(x); else { const el=document.getElementById(a==='quick'?'quick':'setup'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); } });
   const gt=$('#gt'), gd=$('#gd');
   if(gt) gt.onchange=()=>{ const v=Math.round(+gt.value); setPF('target',v>=400&&v<=1600?v:null); setTimeout(refreshProgress,0); };
   if(gd) gd.onchange=()=>{ const v=Math.round(+gd.value); setPF('goal',v>=1&&v<=500?v:20); setTimeout(refreshProgress,0); };
   const ex=$('#exp'); if(ex) ex.onclick=exportProgress;
+  const cs=$('#clrs'); if(cs) cs.onclick=()=>{ if(confirm('Forget which questions you have seen? Full tests may then repeat them.')){ try{ localStorage.removeItem(SEENK); }catch(e){} ST._seen=null; refreshProgress(); } };
   const im=$('#imq'); if(im) im.onclick=importProgress;
-  const clr=$('#clr'); if(clr) clr.onclick=()=>{ if(confirm('Clear your saved test history, skill stats, mistake notebook and goals from this browser?')){ try{ PKEYS.filter(k=>k!=='satTimers'&&k!=='satQuick').forEach(k=>localStorage.removeItem(k)); }catch(e){} home(); } };
+  const clr=$('#clr'); if(clr) clr.onclick=()=>{ if(confirm('Clear your saved test history, skill stats, mistake notebook, seen questions and goals from this browser?')){ try{ PKEYS.filter(k=>k!=='satTimers'&&k!=='satQuick').forEach(k=>localStorage.removeItem(k)); }catch(e){} home(); } };
 }
 function renderQuick(){
   const q=ST.quick, sec=q.sec;
@@ -863,6 +944,7 @@ function home(){
     <p class="lead">Full-length modules built from the College Board question bank, with the same question mix and order, a timer on every question, a built-in Desmos calculator, and a score estimate when you finish.</p>
     <div class="cta"><button class="sbtn big" id="go">Start test</button><button class="sbtn big line" data-go="setup">Adjust setup</button></div>
     ${resumeBanner()}
+    ${dailyBanner()}
     ${todayChip()}
     <div class="sheet" id="sheet">${sheet}</div>
     <p class="sheetnote">Each circle is one question. The highlighted modules are the ones you've selected below.</p>
@@ -898,7 +980,7 @@ function home(){
             <label class="seg"><input type="radio" name="src" value="auto" ${ST.cfg.source==='auto'?'checked':''}><b>College Board question bank</b><span>Live questions, with explanations</span></label>
             <label class="seg"><input type="radio" name="src" value="demo" ${ST.cfg.source==='demo'?'checked':''}><b>Demo questions</b><span>A small built-in set that works offline</span></label>
           </div>
-          <div class="tools"><button class="sbtn mini" id="imp" type="button">Import question file</button><button class="sbtn mini" id="diag" type="button">Test the question bank connection</button>${ST.custom?`<span class="tag">${ST.custom.length} imported</span>`:''}</div>
+          <div class="tools"><button class="sbtn mini" id="imp" type="button">Import question file</button><button class="sbtn mini" id="diag" type="button">Test the question bank connection</button><button class="sbtn mini" id="bad" type="button">Skipped-question report</button>${ST.custom?`<span class="tag">${ST.custom.length} imported</span>`:''}</div>
           <div class="aside">If the question bank can't be reached from this page, the test falls back to a few demo questions so everything else still works. The results screen shows which source was used.</div>
           <details class="fmt"><summary>Import file format</summary><p>A JSON list: <code>[{"section":"rw|math","domain":"CAS|INI|SEC|EOI|H|P|Q|S","difficulty":"E|M|H","type":"mcq|spr","stimulus":"…","stem":"…","options":["…"],"correct":[1],"rationale":"…"}]</code>. For multiple choice, <code>correct</code> lists option positions starting at 0. For student-produced response, it lists the accepted answers as text.</p></details>
         </div></div>
@@ -920,6 +1002,12 @@ function home(){
         <div><div id="qskills"></div><div class="tools" style="margin-top:0"><button class="sbtn mini" id="qall" type="button">Turn all on</button><button class="sbtn mini" id="qnone" type="button">Turn all off</button></div></div></div>
       <div class="rowset"><div><h3>Difficulty</h3><p class="why">Turn off any level you don't want. The questions keep the usual blend of the levels you leave on.</p></div>
         <div><div class="chks" id="qdiff"></div></div></div>
+      <div class="rowset"><div><h3>Question pool</h3><p class="why">Full tests always avoid questions you have already answered. Quick practice can reuse them.</p></div>
+        <div><div class="segs" style="grid-template-columns:repeat(3,1fr)">
+          <label class="seg"><input type="radio" name="qpool" value="mix" ${(ST.quick.pool||'mix')==='mix'?'checked':''}><b>New and seen</b><span>Any question</span></label>
+          <label class="seg"><input type="radio" name="qpool" value="new" ${ST.quick.pool==='new'?'checked':''}><b>New only</b><span>Never answered</span></label>
+          <label class="seg"><input type="radio" name="qpool" value="seen" ${ST.quick.pool==='seen'?'checked':''}><b>Seen only</b><span>Review past questions</span></label></div>
+          <p class="hint" style="margin:10px 0 0">You have answered ${seenCount()} question${seenCount()===1?'':'s'} so far. Omitted questions do not count as seen.</p></div></div>
       <div class="startbar"><p class="chips" id="qprev"></p><button class="sbtn big" id="goq">Start quick practice</button></div>
     </div>
   </div></section>
@@ -942,6 +1030,8 @@ function home(){
       <div><b>A pace report</b><p>A chart of the time you spent on every question, plus coaching on rushed misses and answers that took too long.</p></div>
       <div><b>Review mode and a mistake notebook</b><p>Step through every question you missed with its explanation. Missed questions stay in your notebook until you get them right.</p></div>
       <div><b>Your data stays with you</b><p>Progress is saved in this browser. Export it as a file to back it up or move it to another device, or print your report.</p></div>
+      <div><b>Today's session</b><p>One button builds a short set: missed questions that are due again (after 1, 3, 7 and 16 days) plus new questions on your weakest skills.</p></div>
+      <div><b>Fresh questions every time</b><p>Full tests skip questions you have already answered, and your seen list travels with your exported progress. Quick practice can reuse them.</p></div>
       <div><b>Resume where you left off</b><p>Close the tab in the middle of a test and pick up exactly where you were, with your answers kept and the clock paused.</p></div>
       <div><b>Untimed study and dark mode</b><p>Learn a new skill without a clock, and switch the whole site to a dark theme for late-night sessions.</p></div>
       <div><b>A log of why you miss questions</b><p>Tag each miss as a content gap, a misread, a careless slip or a rushed answer, and see which one costs you the most.</p></div>
@@ -966,11 +1056,12 @@ function home(){
   document.querySelectorAll('input[name=sec]').forEach(r=>r.addEventListener('change',sync)); sync();
   document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const t=document.getElementById(b.dataset.go); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); });
   $('#imp').onclick=()=>$('#importfile').click();
-  $('#diag').onclick=diagnose;
+  $('#diag').onclick=diagnose; $('#bad').onclick=badReport;
   $('#rst').onclick=()=>{ ST.cfg.timers=Object.assign({},DEF_TIMERS); saveTimers(); home(); };
   $('#go').onclick=startTest; $('#go2').onclick=startTest; $('#go3').onclick=startTest;
   renderQuick();
   document.querySelectorAll('input[name=qsec]').forEach(r=>r.onchange=()=>{ ST.quick.sec=r.value; ST.quick.off=[]; saveQuick(); renderQuick(); });
+  document.querySelectorAll('input[name=qpool]').forEach(r=>r.onchange=()=>{ ST.quick.pool=r.value; saveQuick(); });
   $('#qn').oninput=()=>{ updQ(); };
   $('#qskills').onchange=e=>{ const k=e.target.dataset.k; if(!k) return; const off=ST.quick.off, i=off.indexOf(k); if(e.target.checked){ if(i>=0) off.splice(i,1); } else if(i<0) off.push(k); saveQuick(); updQ(); };
   $('#qall').onclick=()=>{ ST.quick.off=[]; saveQuick(); renderQuick(); };
@@ -979,6 +1070,7 @@ function home(){
   $('#goq').onclick=()=>startQuick();
   bindProgress(); bindTheme();
   const rs=$('#rsm'); if(rs) rs.onclick=resumeSession;
+  const dy=$('#dly'); if(dy) dy.onclick=startDaily;
   const rd=$('#rsd'); if(rd) rd.onclick=()=>{ if(confirm('Discard your test in progress?')){ clearSession(); home(); } };
 }
 $('#importfile').onchange=async e=>{
@@ -1001,7 +1093,7 @@ function readSettings(){
     Object.keys(DEF_TIMERS).forEach(k=>{ ST.cfg.timers[k]=+$('#tm_'+k).value||DEF_TIMERS[k]; }); saveTimers();
     ST.cfg.source=(document.querySelector('input[name=src]:checked')||{}).value||'auto';
   }
-  ST.dropped=0; ST.rawSample=null; ST.skillUse={}; ST.qnote='';
+  ST.dropped=0; ST.rawSample=null; ST.skillUse={}; ST.qnote=''; ST._seen=null; ST.repeats=0;
 }
 // ----- quick practice -----
 function skillWeights(sec){
@@ -1043,9 +1135,10 @@ async function buildQuick(m){
   const list0=await getList(m.sec), en=new Set(m.skills), dset=new Set(m.diffs||['E','M','H']);
   const tagged=list0.some(x=>x.sk);
   // strict filter: only questions on an enabled skill AND an enabled difficulty
-  const list=list0.filter(x=>dset.has(x.diff)&&(tagged?(x.sk&&en.has(x.sk)):true));
+  const pm=m.pool||'mix';
+  const list=list0.filter(x=>dset.has(x.diff)&&(tagged?(x.sk&&en.has(x.sk)):true)&&(pm==='mix'||(pm==='new'?!isSeen(x):isSeen(x))));
   ST.qnote='';
-  if(!list.length){ m.emptyMsg='No questions in this question set match the skills and difficulty levels you chose.'; return []; }
+  if(!list.length){ m.emptyMsg=pm==='new'?'You have already answered every question that matches your choices.':pm==='seen'?'You have not answered any questions that match your choices yet.':'No questions in this question set match the skills and difficulty levels you chose.'; return []; }
   let chosen=[];
   if(tagged){
     const cap={}; list.forEach(x=>{ cap[x.sk]=(cap[x.sk]||0)+1; });
@@ -1067,7 +1160,7 @@ async function buildQuick(m){
   const out=[]; let idx=0;
   async function worker(){ while(idx<chosen.length){ const k=idx++; out[k]=await fetchValid(chosen[k],list,m); } }
   await Promise.all(Array.from({length:Math.min(6,Math.max(1,chosen.length))},worker));
-  if(m.sec==='math') await enforceTypes(out,list);
+  if(m.sec==='math') await enforceTypes(out,list,m.pool||'mix');
   return orderModule(m.sec,out);
 }
 // cfg is optional: omitted = use the settings on the Quick practice form
@@ -1081,7 +1174,7 @@ async function startQuick(cfg){
   if(!cfg) saveQuick();
   ST.lists={}; ST.used=new Set(); ST.results=[]; ST.mi=0;
   const pace=q.sec==='rw'?71:95;
-  ST.plan=[{sec:q.sec,n:1,quick:true,count:q.n,skills,diffs,mix:{E:.3,M:.45,H:.25},minutes:q.n*pace/60,label:`Quick practice: ${SPEC[q.sec].name}`}];
+  ST.plan=[{sec:q.sec,n:1,quick:true,count:q.n,skills,diffs,mix:{E:.3,M:.45,H:.25},pool:q.pool||'mix',minutes:q.n*pace/60,label:`Quick practice: ${SPEC[q.sec].name}`}];
   await beginModule();
 }
 async function startSkills(sec,keys){ await startQuick({sec,n:10,off:allKeys(sec).filter(k=>!keys.includes(k)),dOff:[]}); }
@@ -1119,7 +1212,7 @@ function bindTheme(){ const b=$('#theme'); if(!b) return; b.textContent=themeLab
 // ----- save and resume a test in progress -----
 function saveSession(between){
   if(!ST.plan.length) return;
-  const o={v:1,cfg:{sections:ST.cfg.sections,feedback:ST.cfg.feedback,showQT:ST.cfg.showQT,untimed:ST.cfg.untimed},plan:ST.plan,mi:ST.mi,results:ST.results,used:[...ST.used],sourceNote:ST.sourceNote,qnote:ST.qnote,skillUse:ST.skillUse,dropped:ST.dropped,t:Date.now()};
+  const o={v:1,cfg:{sections:ST.cfg.sections,feedback:ST.cfg.feedback,showQT:ST.cfg.showQT,untimed:ST.cfg.untimed},plan:ST.plan,mi:ST.mi,results:ST.results,used:[...ST.used],sourceNote:ST.sourceNote,qnote:ST.qnote,skillUse:ST.skillUse,dropped:ST.dropped,repeats:ST.repeats||0,t:Date.now()};
   if(between) o.between=true;
   else{
     if(ST.screen!=='test'||!ST.q.length) return;
@@ -1141,7 +1234,7 @@ function resumeBanner(){
 function resumeSession(){
   const o=resumeInfo(); if(!o) return;
   Object.assign(ST.cfg,o.cfg||{});
-  ST.plan=o.plan; ST.mi=o.mi; ST.results=o.results||[]; ST.used=new Set(o.used||[]); ST.sourceNote=o.sourceNote||''; ST.qnote=o.qnote||''; ST.skillUse=o.skillUse||{}; ST.dropped=o.dropped||0; ST.lists={}; ST.q=[];
+  ST.plan=o.plan; ST.mi=o.mi; ST.results=o.results||[]; ST.used=new Set(o.used||[]); ST.sourceNote=o.sourceNote||''; ST.qnote=o.qnote||''; ST.skillUse=o.skillUse||{}; ST.dropped=o.dropped||0; ST.repeats=o.repeats||0; ST.lists={}; ST.q=[];
   if(o.between){ beginModule(); return; }
   ST.q=o.q; ST.qi=o.qi; ST.ans=o.ans||{}; ST.flag=o.flag||{}; ST.elim=o.elim||{}; ST.checked=o.checked||{}; ST.qtime=o.qtime||{}; ST.hl=o.hl||{};
   const m=ST.plan[ST.mi], left=o.left;
@@ -1157,6 +1250,7 @@ async function beginModule(){
   }
   loading(`Loading ${esc(m.label)}…`);
   ST.q=m.fixed?m.fixed.slice():m.quick?await buildQuick(m):await buildModule(m);
+  if(m.fixed&&m.fill>0){ const base=Object.assign({},m,{fixed:null,count:m.fill}); let ex=await buildQuick(base); if(!ex.length&&m.pool==='new') ex=await buildQuick(Object.assign({},base,{pool:'mix'})); ST.q=ST.q.concat(ex); }
   if(!ST.q.length){
     stage('No matching questions',`<p style="margin:0">${esc(m.emptyMsg||'No questions matched your choices.')} Turn on more skills or difficulty levels, or change the question source, and try again.</p>`,`<button class="sbtn big" id="bk">Back to setup</button>`);
     $('#bk').onclick=home; return;
@@ -1347,11 +1441,45 @@ const REASONS=[
  ['careless','Careless mistake','Check your work before moving on: plug answers back in and reread every choice.'],
  ['time','Rushed or ran out of time','Set a time target for each question, and mark hard ones to come back to.'],
  ['guess','Guessed','Cross out the choices you know are wrong first. Even eliminating one improves your odds.']];
+// Missed questions come back after 1, 3, 7 and 16 days. A correct answer moves a question up a step,
+// a miss sends it back to the start, and four correct reviews in a row retire it from the notebook.
+const SRS_DAYS=[1,3,7,16];
+function srsDue(){ const s=ld(SRSK,{}), now=Date.now(); return ld(MK,[]).filter(q=>{ const e=s[q.id]; return !e||e.d<=now; }); }
 function saveMissed(all){
-  const map=new Map(ld(MK,[]).map(q=>[q.id,q])), tags=ld(TG,{});
-  all.forEach(r=>r.qs.forEach((q,i)=>{ if(isCorrect(q,r.ans[i])){ map.delete(q.id); delete tags[q.id]; } else map.set(q.id,q); }));
+  const map=new Map(ld(MK,[]).map(q=>[q.id,q])), tags=ld(TG,{}), srs=ld(SRSK,{}), now=Date.now();
+  all.forEach(r=>r.qs.forEach((q,i)=>{
+    if(isCorrect(q,r.ans[i])){
+      if(map.has(q.id)){ const b=((srs[q.id]&&srs[q.id].b)||0)+1;
+        if(b>=SRS_DAYS.length){ map.delete(q.id); delete tags[q.id]; delete srs[q.id]; }
+        else srs[q.id]={b,d:now+SRS_DAYS[b]*864e5}; }
+    } else { map.set(q.id,q); srs[q.id]={b:0,d:now+SRS_DAYS[0]*864e5}; }
+  }));
   Object.keys(tags).forEach(k=>{ if(!map.has(k)) delete tags[k]; });
-  sv(MK,[...map.values()].slice(-60)); sv(TG,tags);
+  Object.keys(srs).forEach(k=>{ if(!map.has(k)) delete srs[k]; });
+  sv(MK,[...map.values()].slice(-60)); sv(TG,tags); sv(SRSK,srs);
+}
+function dailyCounts(){
+  const per=Math.max(5,Math.min(15,Math.round(PF().goal/2))), due=srsDue(), out={};
+  ['rw','math'].forEach(sec=>{ const d=Math.min(due.filter(q=>q.section===sec).length,Math.ceil(per*.6)); out[sec]={due:d,fill:per-d,per}; });
+  return out;
+}
+function dailyBanner(){
+  if(resumeInfo()) return '';
+  const c=dailyCounts(), nd=c.rw.due+c.math.due, nf=c.rw.fill+c.math.fill, mins=Math.round((c.rw.per*71+c.math.per*95)/60);
+  return `<div class="resume daily"><div><b>Today's session</b><span>${nd?`${nd} saved question${nd>1?'s':''} due for review, plus `:''}${nf} new question${nf>1?'s':''} on ${weakList('rw').length+weakList('math').length?'your weakest skills':'a mix of skills'}. About ${mins} minutes, with the answer shown after each miss.</span></div><div class="tools"><button class="sbtn" id="dly" type="button">Start session</button></div></div>`;
+}
+async function startDaily(){
+  readSettings(); ST.cfg.feedback=true;
+  if(resumeInfo()&&!confirm('Starting a session replaces the test you have in progress. Continue?')) return;
+  clearSession();
+  ST.lists={}; ST.used=new Set(); ST.results=[]; ST.mi=0; ST.skillUse={};
+  const c=dailyCounts(); ST.plan=[];
+  ['rw','math'].forEach(sec=>{
+    const due=shuffle(srsDue().filter(q=>q.section===sec)).slice(0,c[sec].due), w=weakList(sec).map(o=>o.k), skills=w.length?w:allKeys(sec);
+    ST.plan.push({sec,n:1,daily:true,quick:true,fixed:due,fill:c[sec].fill,count:c[sec].fill,skills,diffs:['E','M','H'],mix:{E:.3,M:.45,H:.25},pool:'new',
+      minutes:(due.length+c[sec].fill)*(sec==='rw'?71:95)/60,label:`Today's session: ${SPEC[sec].name}`});
+  });
+  await beginModule();
 }
 function reasonBars(c,total,top){ return top.map(r=>`<div class="wk"><div><b>${r[1]}</b></div><div class="pbar" style="width:140px"><i style="width:${Math.round(c[r[0]]/total*100)}%"></i></div><b>${c[r[0]]}</b></div>`).join(''); }
 function reasonsInner(){
@@ -1372,15 +1500,16 @@ function allReasonsHTML(){
 function rsChips(q){ const t=ld(TG,{})[q.id]; return `<div class="rsn"><b>Why did you miss it?</b><div class="rsrow">${REASONS.map(r=>`<button class="rsc ${t===r[0]?'on':''}" data-rs="${r[0]}" type="button">${r[1]}</button>`).join('')}</div></div>`; }
 function recordResults(){
   const all=ST.results; if(!all.length) return;
-  let n=0,c=0,tm=0,demo=false; const sks=ld(SKK,{});
+  let n=0,c=0,tm=0,demo=false; const sks=ld(SKK,{}), seen=ld(SEENK,{});
   all.forEach(r=>r.qs.forEach((q,i)=>{
     n++; const ok=isCorrect(q,r.ans[i]); if(ok) c++; tm+=(r.qtime[i]||0)/1000;
     const isDemo=/^demo|^imp/.test(q.id)||q.fallback; if(isDemo) demo=true;
+    const av=r.ans[i]; if(!isDemo&&av!==undefined&&av!==null&&av!=='') seen[q.id]=[Date.now(),ok?1:0];
     if(q.sk&&!isDemo){ const o=sks[q.sk]=sks[q.sk]||{n:0,miss:0}; o.n++; if(!ok) o.miss++; }
   }));
-  sv(SKK,sks); saveMissed(all); addDaily(n);
+  sv(SKK,sks); saveMissed(all); sv(SEENK,trimSeen(seen)); ST._seen=null; addDaily(c);
   const er=estSection('rw'), em=estSection('math'), f=all[0].m;
-  const kind=f.retry?(f.nb?'Mistake notebook':'Retry'):f.quick?'Quick practice · '+SPEC[f.sec].name:(ST.cfg.sections==='full'?'Full test':SPEC[ST.cfg.sections].name);
+  const kind=f.daily?"Today's session":f.retry?(f.nb?'Mistake notebook':'Retry'):f.quick?'Quick practice · '+SPEC[f.sec].name:(ST.cfg.sections==='full'?'Full test':SPEC[ST.cfg.sections].name);
   const h=ld(HK,[]); h.push({t:Date.now(),kind,n,c,avg:Math.round(tm/n),total:(er&&em)?er.score+em.score:null,rw:er?er.score:null,math:em?em.score:null,demo});
   sv(HK,h.slice(-30));
 }
@@ -1546,7 +1675,7 @@ function results(){
     :one?`<div class="lbl">Estimated ${er?'Reading and Writing':'Math'} score</div><div class="score"><span id="sv" data-v="${one.score}">${one.score}</span><small>out of 800</small></div><div class="rng">Likely range ${one.lo}–${one.hi}</div>${extra}`
     :`<div class="lbl">Your results</div><div class="score"><span id="sv" data-v="${tc}">${tc}</span><small>out of ${tq} correct</small></div>`;
   const bar=(label,e)=>e?`<div class="sb"><div class="sbh"><span>${label}</span><b>${e.score}</b></div><div class="track"><i class="fill" style="width:0" data-w="${Math.max(2,(e.score-200)/6)}"></i></div><div class="sbf"><span>200</span><span>Likely ${e.lo}–${e.hi} · ${e.hard?'harder':'easier'} Module 2</span><span>800</span></div></div>`:'';
-  const modTiles=all.map(r=>{ const p=r.score/r.qs.length; return `<div class="tile"><div class="nm">${esc(SPEC[r.m.sec].name)}</div><div class="rt">${r.m.quick?'Quick practice':r.m.retry?'Retry set':'Module '+r.m.n}${r.hard!==undefined?' · '+(r.hard?'harder route':'easier route'):''}${r.timeUp?' · time ran out':''}</div><div class="v">${r.score}<small> / ${r.qs.length}</small></div><div class="pbar"><i class="${p>=.8?'ok':p<.5?'bad':''}" style="width:${Math.round(p*100)}%"></i></div></div>`; }).join('');
+  const modTiles=all.map(r=>{ const p=r.score/r.qs.length; return `<div class="tile"><div class="nm">${esc(SPEC[r.m.sec].name)}</div><div class="rt">${r.m.daily?"Today's session":r.m.quick?'Quick practice':r.m.retry?'Retry set':'Module '+r.m.n}${r.hard!==undefined?' · '+(r.hard?'harder route':'easier route'):''}${r.timeUp?' · time ran out':''}</div><div class="v">${r.score}<small> / ${r.qs.length}</small></div><div class="pbar"><i class="${p>=.8?'ok':p<.5?'bad':''}" style="width:${Math.round(p*100)}%"></i></div></div>`; }).join('');
   const dom={}; all.forEach(r=>r.qs.forEach((q,i)=>{ const k=r.m.sec+q.domain; const o=dom[k]=dom[k]||{n:SPEC[r.m.sec].domNames[q.domain]||q.domain,sec:SPEC[r.m.sec].name,c:0,t:0,time:0}; o.t++; if(isCorrect(q,r.ans[i])) o.c++; o.time+=(r.qtime[i]||0)/1000; }));
   const domRows=Object.values(dom).map(d=>{ const p=d.c/d.t; return `<tr><td><b>${esc(d.n)}</b><div class="muted" style="font-size:13px">${esc(d.sec)}</div></td><td style="width:34%"><div class="pbar"><i class="${p>=.8?'ok':p<.5?'bad':''}" style="width:${Math.round(p*100)}%"></i></div></td><td>${d.c}/${d.t} · ${Math.round(p*100)}%</td><td>${fmt(d.time/d.t)}</td></tr>`; }).join('');
   const tables=all.map((r,ri)=>`<h3 style="margin:28px 0 10px;font-size:1.1rem">${esc(r.m.label)}${r.hard!==undefined?(r.hard?' · harder module':' · easier module'):''}</h3><div class="tbwrap"><table class="fmtt rv"><tr><th>#</th><th>Content area</th><th>Skill</th><th>Level</th><th>Result</th><th>Your answer</th><th>Correct</th><th>Time</th></tr>
@@ -1564,7 +1693,8 @@ function results(){
   const nFlag=all.reduce((a,r)=>a+Object.keys(r.flag).filter(k=>r.flag[k]).length,0);
   const reviewBtns=`<div class="tools" style="margin:0 0 6px">${missed?`<button class="sbtn mini" data-rvk="missed" type="button">Review ${missed} missed</button>`:''}${nFlag?`<button class="sbtn mini" data-rvk="flagged" type="button">Review ${nFlag} marked</button>`:''}${over?`<button class="sbtn mini" data-rvk="slow" type="button">Review ${over} over time</button>`:''}<button class="sbtn mini" data-rvk="all" type="button">Review all ${tq}</button></div>`;
   const notes=(ST.qnote&&all[0].m.quick?`<div class="aside rnote">${esc(ST.qnote)}</div>`:'')+(demo?`<div class="aside rnote">Some or all questions in this test came from the built-in demo set or an imported file instead of the live College Board bank, so the estimate and tips are less meaningful.</div>`:'')
-    +(ST.dropped?`<div class="aside rnote">${ST.dropped} question(s) from the bank came back in an unexpected format and were swapped for others.</div>`:'')
+    +(ST.repeats&&!all[0].m.quick?`<div class="aside rnote">${ST.repeats} question${ST.repeats>1?'s':''} in this test were repeats from your earlier practice, so the estimate may run high. This happens when the bank has too few unseen questions left for a skill.</div>`:'')
+    +(ST.dropped?`<div class="aside rnote">${ST.dropped} question(s) from the bank came back in an unexpected format and were swapped for others. The reason is saved in the skipped-question report on the home screen.</div>`:'')
     +(tot||one?`<div class="aside rnote">The score is a rough estimate. It weights each question by difficulty and accounts for an easier or harder Module 2, but the real exam uses a confidential scoring curve. Expect about 30 points either way per section.</div>`:'');
   const pace=tq&&over/tq>.25?`<div class="aside" style="margin-top:22px"><b>Pacing:</b> you went over your time target on ${over} of ${tq} questions (${Math.round(over/tq*100)}%). Practice the skills above with a timer on, and move on from any question that runs past its target.</div>`:'';
   app.innerHTML=`<div class="site" id="site">
