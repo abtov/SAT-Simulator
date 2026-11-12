@@ -85,9 +85,15 @@ button,input,select{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-s
 .gq .f{position:absolute;top:-8px;right:-6px;font-size:14px;color:#b3261e}
 .legend{display:flex;gap:18px;font-size:13px;color:var(--mute);flex-wrap:wrap}
 /* calculator */
-#calc{position:fixed;right:20px;top:92px;width:480px;height:520px;min-width:300px;min-height:300px;background:#fff;border:2px solid #222;border-radius:10px;z-index:40;display:none;flex-direction:column;resize:both;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.3)}
-#calc .h{background:#222;color:#fff;padding:7px 12px;cursor:move;display:flex;justify-content:space-between;font-family:system-ui;font-weight:600;user-select:none}
+#calc{position:fixed;left:0;top:92px;bottom:60px;width:var(--calc-w,460px);background:#fff;border-right:3px solid #222;z-index:40;display:none;flex-direction:column;overflow:hidden;box-shadow:8px 0 26px rgba(0,0,0,.16)}
+#calc .h{background:#222;color:#fff;padding:7px 12px;display:flex;justify-content:space-between;font-family:system-ui;font-weight:600;user-select:none}
 #calc .h span{cursor:pointer}
+#calcgrip{position:absolute;top:0;right:0;bottom:0;width:12px;cursor:col-resize;z-index:3;touch-action:none}
+#calcgrip::after{content:"";position:absolute;right:3px;top:50%;height:46px;width:4px;margin-top:-23px;border-radius:3px;background:#9aa3b8}
+#calcgrip:hover::after{background:#3a4ff0}
+.main{transition:margin-left .18s ease}
+body.calc-docked .main{margin-left:var(--calc-w,460px)}
+@media(max-width:800px){#calc{width:100%!important;border-right:0;border-bottom:3px solid #222}body.calc-docked .main{margin-left:0}#calcgrip{display:none}}
 #calcbody{flex:1;min-height:0}
 /* home */
 .home{max-width:860px;margin:0 auto;padding:36px 24px;font-family:system-ui;overflow:auto}
@@ -330,6 +336,101 @@ mark.hl{background:#ffe27a;color:inherit;padding:0;border-radius:2px}
   .pacewrap{overflow:visible}
 }
 .gl{stroke:var(--line)}
+[hidden]{display:none!important}
+/* background: soft colour glows plus a field of answer-sheet bubbles */
+.site{min-height:100vh;background:radial-gradient(900px 520px at 6% -4%,rgba(58,79,240,.17),transparent 62%),radial-gradient(760px 480px at 96% 6%,rgba(255,200,61,.22),transparent 58%),radial-gradient(800px 560px at 50% 108%,rgba(58,79,240,.12),transparent 62%),var(--bg);background-attachment:fixed}
+.site::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,200,61,.62) 0 5px,transparent 5.5px),radial-gradient(circle,rgba(58,79,240,.26) 0 5px,transparent 5.5px),radial-gradient(circle,transparent 0 5.5px,rgba(58,79,240,.14) 6px 7px,transparent 7.5px);
+  background-size:152px 152px,152px 152px,38px 38px;background-position:57px 95px,19px 57px,0 0;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.95),rgba(0,0,0,.3) 55%,rgba(0,0,0,.6));mask-image:linear-gradient(180deg,rgba(0,0,0,.95),rgba(0,0,0,.3) 55%,rgba(0,0,0,.6))}
+.site>.nav,.site>main,.site>.foot{position:relative;z-index:1}
+.nav{background:rgba(244,246,252,.82)}
+.navlinks{display:contents}
+.pgoals .inp em{white-space:nowrap}
+.pgoals .fld{min-width:0}
+.pgoals .inp{min-width:178px}
+.nav button.lnk.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--ult)}
+.hero{background:none}
+.sect{padding:34px 0 8px}
+.hero.page+.sect{padding-top:8px}
+/* section headers share one look: a navy band with a faint bubble pattern */
+.card{padding:0;overflow:hidden}
+.pagebar{margin-bottom:22px}
+.pathhd{position:relative;isolation:isolate}
+.pathhd::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(circle at 96% 0,rgba(255,200,61,.28),transparent 40%),radial-gradient(circle,transparent 0 5.5px,rgba(255,255,255,.09) 6px 7px,transparent 7.5px);background-size:auto,38px 38px}
+.pathhd h2{margin:0 0 8px;font-size:1.9rem;letter-spacing:-.03em;line-height:1.1;font-weight:800;color:#fff}
+.pathhd+.rowset{border-top:0}
+.mh{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px 22px;background:linear-gradient(135deg,#0d1636,#1b2a7a);color:#fff;position:relative;isolation:isolate}
+.mh::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle at 100% 0,rgba(255,200,61,.26),transparent 42%)}
+.mh h3{margin:0;font-size:1.02rem;font-weight:800;letter-spacing:-.01em;color:#fff}
+.mh span{font-size:13px;color:#aeb8ea;text-align:right}
+.bd{padding:22px 26px}
+.card.today .ringrow{margin-top:0}
+.card.today h4{margin-top:22px}
+.nbb{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.nbb p{margin:0;color:var(--mute);font-size:14.5px;max-width:36em}
+.nbb .tools{margin:0}
+.dstats{display:flex;gap:38px;flex-wrap:wrap;margin-bottom:16px}
+.dstats b{display:block;font-size:1.9rem;letter-spacing:-.03em;line-height:1.05;font-weight:800}
+.dstats span{color:var(--mute);font-size:13.5px}
+.pgoals{display:flex;gap:16px 30px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;padding:18px 20px;margin-bottom:26px;border-radius:14px;background:var(--tint);border:1px solid var(--line)}
+.pgt b{display:block;font-size:1rem}
+.pgt span{color:var(--mute);font-size:13.5px}
+.jcs{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.jc{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden;text-align:left;cursor:pointer;padding:0;color:var(--ink);font:inherit;box-shadow:0 1px 2px rgba(14,19,48,.04);transition:transform .15s,box-shadow .15s}
+.jc:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(14,19,48,.16)}
+.jc .mh{padding:14px 18px}
+.jc p{margin:0;padding:16px 18px 6px;color:var(--mute);font-size:14.5px;line-height:1.5;flex:1}
+.jc b{display:block;padding:8px 18px 18px;color:var(--ult);font-size:14.5px}
+.feat{grid-template-columns:repeat(3,1fr);gap:16px}
+.feat div{padding:20px 22px;border:1px solid var(--line);border-top:4px solid #3a4ff0;border-radius:16px;background:var(--panel)}
+.feat div:nth-child(3n+2){border-top-color:#ffc83d}
+.feat div:nth-child(3n){border-top-color:#0d1636}
+.feat p{max-width:none;font-size:15px;line-height:1.55}
+.card .fmtt{border:0}
+@media(max-width:1000px){.jcs{grid-template-columns:1fr 1fr}.feat{grid-template-columns:1fr 1fr}}
+@media(max-width:860px){.jcs,.feat{grid-template-columns:1fr}.nav .wrap{flex-wrap:wrap;height:auto;gap:2px 16px;padding-top:10px;padding-bottom:6px}.nav button.lnk{display:inline-block;font-size:14.5px}.nav button.lnk.thm{order:1}.nav #go2{display:none}.navlinks{display:flex;order:3;flex-basis:100%;gap:20px;overflow-x:auto}.navlinks .lnk{white-space:nowrap}.pgoals{align-items:stretch}.bd{padding:18px}}
+.path{margin-top:22px;padding:0;overflow:hidden}
+.pathhd{background:linear-gradient(135deg,#0d1636 0,#1b2a7a 60%,#3a4ff0 130%);color:#fff;padding:28px 32px 26px;display:grid;grid-template-columns:1.1fr 1fr;gap:18px 40px;align-items:center}
+.pathhd h3{margin:0 0 8px;font-size:1.55rem;letter-spacing:-.025em;font-weight:800;color:#fff}
+.pathhd p{margin:0;color:#c3cbf3;font-size:14.5px;line-height:1.55;max-width:46ch}
+.psts{display:flex;gap:30px;flex-wrap:wrap;justify-content:flex-end}
+.pst b{display:block;font-size:2rem;letter-spacing:-.03em;line-height:1.05;font-weight:800}
+.pst span{display:block;color:#aeb8ea;font-size:13px;max-width:17ch;margin-top:3px}
+.pst.hl b{color:#ffc83d}
+.jr{grid-column:1/-1;margin-top:6px}
+.jt{position:relative;height:12px;border-radius:99px;background:rgba(255,255,255,.14)}
+.jf{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#8d9bff,#ffc83d)}
+.jp{position:absolute;top:0;bottom:0;border-radius:0 99px 99px 0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 5px,rgba(255,255,255,.12) 5px 10px)}
+.jm{position:absolute;top:-6px;bottom:-6px;width:3px;background:#ffc83d;border-radius:2px;transform:translateX(-1px)}
+.jm span{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-style:normal;font-size:12px;font-weight:800;white-space:nowrap;color:#1b1500;background:#ffc83d;padding:2px 9px;border-radius:99px}
+.jl{display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:12px;color:#aeb8ea}
+.pathbd{padding:26px 32px 30px}
+.ph{margin:0 0 4px;font-size:1.08rem;font-weight:800;letter-spacing:-.01em}
+.pcols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.psec{border:1px solid var(--line);border-radius:16px;padding:18px 20px 8px;border-top:4px solid #3a4ff0;background:var(--panel)}
+.psec.math{border-top-color:#ffc83d}
+.psh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.psec h4{margin:0;font-size:1.02rem;font-weight:800}
+.ptot{font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;background:var(--tint);color:#3a4ff0}
+.psec.math .ptot{background:#fff3cf;color:#7a5a00}
+.pdom{margin:14px 0 2px;font-size:12.5px;color:var(--mute);font-weight:700}
+.pk{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.pkm b{display:block;font-size:14.5px;line-height:1.3}
+.pkm span{display:block;color:var(--mute);font-size:12.5px;margin-top:2px}
+.pkb{display:block;height:5px;border-radius:99px;background:var(--line);margin-top:7px;overflow:hidden}
+.pkb u{display:block;height:100%;border-radius:99px;background:#3a4ff0}
+.psec.math .pkb u{background:#e0a800}
+.pkg{font-weight:800;font-size:1.05rem;letter-spacing:-.02em}
+.wks{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.wkw{border:1px solid var(--line);border-radius:14px;padding:14px 15px;background:var(--panel)}
+.wkw.tst{border-color:#3a4ff0;box-shadow:inset 0 3px 0 #3a4ff0}
+.wkn{font-weight:800;font-size:14px;margin-bottom:9px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.wkn em{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:99px;background:#3a4ff0;color:#fff}
+.chp{display:block;font-size:12.5px;line-height:1.35;padding:6px 9px;border-radius:9px;margin-top:6px;background:var(--tint);color:var(--ink)}
+.chp.math{background:#fff3cf;color:#4a3700}
+@media(max-width:860px){.pathhd{grid-template-columns:1fr;padding:24px 22px}.psts{justify-content:flex-start}.pathbd{padding:22px}.pcols{grid-template-columns:1fr}}
+@media screen{html[data-theme=dark] .chp.math{background:#3a3213;color:#f2e2a8}html[data-theme=dark] .psec.math .ptot{background:#3a3213;color:#ffd75a}html[data-theme=dark] .ptot{color:#9aa8ff}}
 .imgfail{display:inline-block;padding:6px 10px;border:1px dashed #8a93ad;border-radius:6px;font-size:13px;color:#5a6482}
 .resume.daily{border-color:var(--blue)}
 .opt img,.stem img,.stim img{height:auto}
@@ -375,12 +476,20 @@ mark.hl{background:#ffe27a;color:inherit;padding:0;border-radius:2px}
   html[data-theme=dark] .seg:hover,html[data-theme=dark] .chk:hover{border-color:#4a5688}
   html[data-theme=dark] .sbtn.line:hover{background:var(--ink);color:var(--bg)}
   html[data-theme=dark] .inp input{color:var(--ink)}
+  html[data-theme=dark] .site{background:radial-gradient(900px 520px at 6% -4%,rgba(90,110,255,.22),transparent 62%),radial-gradient(760px 480px at 96% 6%,rgba(255,200,61,.09),transparent 58%),radial-gradient(800px 560px at 50% 108%,rgba(90,110,255,.14),transparent 62%),var(--bg);background-attachment:fixed}
+  html[data-theme=dark] .site::before{background-image:radial-gradient(circle,rgba(255,200,61,.42) 0 5px,transparent 5.5px),radial-gradient(circle,rgba(120,138,255,.34) 0 5px,transparent 5.5px),radial-gradient(circle,transparent 0 5.5px,rgba(154,168,255,.16) 6px 7px,transparent 7.5px)}
+  html[data-theme=dark] .hero{background:none}
+  html[data-theme=dark] .pgoals{background:#18214a}
+  html[data-theme=dark] .jc:hover{box-shadow:0 14px 32px rgba(0,0,0,.5)}
+  html[data-theme=dark] .jc b{color:#9aa8ff}
+  html[data-theme=dark] .nav{background:rgba(11,16,36,.82)}
+  html[data-theme=dark] .feat div:nth-child(3n){border-top-color:#8d9bff}
 }
 </style>
 </head>
 <body>
 <div id="app"></div>
-<div id="calc"><div class="h" id="calch"><div>Desmos Graphing Calculator</div><span id="calcx">✕</span></div><div id="calcbody"></div></div>
+<div id="calc"><div class="h" id="calch"><div>Desmos Graphing Calculator</div><span id="calcx" title="Close" role="button" aria-label="Close calculator">✕</span></div><div id="calcbody"></div><div id="calcgrip" title="Drag to resize" aria-hidden="true"></div></div>
 <input type="file" id="importfile" accept=".json" style="display:none">
 
 <script>
@@ -812,7 +921,7 @@ function weakList(sec){
 }
 // ----- goals, streaks and charts -----
 const dkey=t=>t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
-const PF=()=>Object.assign({goal:20,target:null,fs:100,theme:'auto'},ld('satPrefs',{}));
+const PF=()=>Object.assign({goal:20,target:null,testDate:null,fs:100,theme:'auto'},ld('satPrefs',{}));
 function setPF(k,v){ const o=ld('satPrefs',{}); o[k]=v; sv('satPrefs',o); }
 function addDaily(n){ const d=ld('satDaily',{}), k=dkey(new Date()); d[k]=(d[k]||0)+n; const ks=Object.keys(d).sort(); ks.slice(0,Math.max(0,ks.length-120)).forEach(x=>{ delete d[x]; }); sv('satDaily',d); }
 function todayCount(){ return ld('satDaily',{})[dkey(new Date())]||0; }
@@ -846,10 +955,52 @@ function planItems(){
   if(!out.length) out.push({t:'Start with a 10-question quick set',d:'Choose a subject and see where you stand',a:'quick'});
   return out.slice(0,3);
 }
+// ----- path to your target score -----
+const PTS={rw:600/54,math:600/44};   // rough score points per question in each section
+// Ranks skills by how many points they could add: questions on the test x the gap to 90% accuracy x points per question.
+function skillPriority(sec){
+  const sks=ld(SKK,{}), w=skillWeights(sec);
+  return SK.filter(r=>r[1]===sec).map(r=>{ const o=sks[r[0]]||{n:0,miss:0}, acc=(o.n-o.miss+1)/(o.n+2);   // small prior so a few answers don't swing it
+    return {k:r[0],name:r[3],sec,dom:r[2],n:o.n,acc,gain:Math.max(0,.9-acc)*w[r[0]]*2*PTS[sec]}; }).sort((a,b)=>b.gain-a.gain);
+}
+function currentLevel(){ const real=ld(HK,[]).filter(h=>!h.demo&&h.total!=null).slice(-3); return real.length?Math.round(real.reduce((a,h)=>a+h.total,0)/real.length/10)*10:null; }
+function targetPlan(){
+  const pf=PF(); if(!pf.target) return null;
+  const cur=currentLevel(), gap=cur==null?null:pf.target-cur;
+  let days=null; if(pf.testDate){ const d=Math.ceil((new Date(pf.testDate+'T00:00:00')-new Date())/864e5); if(d>0) days=d; }
+  const weeks=days?Math.max(1,Math.min(16,Math.ceil(days/7))):8;
+  const all=skillPriority('rw').concat(skillPriority('math')).sort((a,b)=>b.gain-a.gain), pool=all.filter(x=>x.gain>0.5);
+  const bySec={rw:pool.filter(x=>x.sec==='rw').slice(0,3),math:pool.filter(x=>x.sec==='math').slice(0,3)}, top=bySec.rw.concat(bySec.math), potential=Math.round(top.reduce((a,x)=>a+x.gain,0)/10)*10;
+  const plan=[]; for(let i=0;i<weeks;i++){ const f=pool.length?[pool[(2*i)%pool.length],pool[(2*i+1)%pool.length]].filter((x,j,a)=>a.indexOf(x)===j):[];
+    plan.push({w:i+1,focus:f,test:i===weeks-1||(weeks>3&&i%2===1)}); }
+  return {target:pf.target,cur,gap,days,weeks,top,bySec,potential,plan,dated:!!days};
+}
+function pathHTML(){
+  const pf=PF(), t=targetPlan();
+  if(!t) return `<div class="panel path"><div class="pathhd"><div><h3>Your path to a target score</h3><p>Set a target total score below. This panel will turn it into a plan: where your points are and what to do each week.</p></div></div><div class="pathbd">${goalFields(pf)}</div></div>`;
+  const nReal=ld(HK,[]).filter(h=>!h.demo&&h.total!=null).length, behind=t.gap!=null&&t.gap>0, rate=behind?Math.ceil(t.gap/t.weeks/5)*5:0;
+  const pc=v=>Math.max(0,Math.min(100,(v-400)/12)), A=t.cur!=null?pc(t.cur):0, T=pc(t.target), B=t.cur!=null?Math.max(0,pc(Math.min(1600,t.cur+t.potential))-A):0;
+  const stats=t.cur==null?`<div class="pst"><b>${t.target}</b><span>target</span></div><div class="pst"><b>?</b><span>finish a full test to find your starting point</span></div>`
+    :`<div class="pst"><b>${t.cur}</b><span>your level, last ${Math.min(3,nReal)} full test${nReal>1?'s':''}</span></div><div class="pst"><b>${t.target}</b><span>target</span></div><div class="pst hl"><b>${behind?'+'+t.gap:'On track'}</b><span>${behind?`about +${rate} a week for ${t.weeks} weeks`:'keep it steady'}</span></div>`;
+  const journey=`<div class="jr" aria-hidden="true"><div class="jt"><i class="jf" style="width:${A}%"></i><i class="jp" style="left:${A}%;width:${B}%"></i><em class="jm" style="left:${T}%"><span>Target ${t.target}</span></em></div><div class="jl"><span>400</span>${t.cur!=null&&B>2?`<span>Lighter bar: about where your top skills could take you</span>`:'<span></span>'}<span>1600</span></div></div>`;
+  const max=Math.max(1,...t.top.map(x=>x.gain));
+  const sec=sk=>{ const list=t.bySec[sk]; if(!list.length) return `<div class="psec ${sk}"><h4>${SPEC[sk].name}</h4><p class="hint">Your measured skills here are already near 90%.</p></div>`;
+    const pts=Math.round(list.reduce((a,x)=>a+x.gain,0)/5)*5, doms=[...new Set(list.map(x=>x.dom))];
+    return `<div class="psec ${sk}"><div class="psh"><h4>${SPEC[sk].name}</h4><span class="ptot">up to +${pts}</span></div>${doms.map(d=>`<div class="pdom">${esc(SPEC[sk].domNames[d])}</div>${list.filter(x=>x.dom===d).map(x=>`<div class="pk"><div class="pkm"><b>${esc(x.name)}</b><span>${x.n?Math.round(x.acc*100)+'% correct · '+x.n+' answered':'Not practiced yet'}</span><i class="pkb"><u style="width:${Math.max(6,Math.round(x.gain/max*100))}%"></u></i></div><div class="pkg">+${Math.max(5,Math.round(x.gain/5)*5)}</div><button class="sbtn mini" data-pk="${x.k}" type="button">Practice</button></div>`).join('')}`).join('')}</div>`; };
+  const wk=t.plan.slice(0,t.weeks).map(p=>`<div class="wkw${p.test?' tst':''}"><div class="wkn">Week ${p.w}${p.test?`<em>${p.w===t.weeks?'Final full test':'Full test'}</em>`:''}</div>${p.focus.length?p.focus.map(x=>`<span class="chp ${x.sec}">${esc(x.name)}</span>`).join(''):'<span class="chp">Mixed practice</span>'}</div>`).join('');
+  return `<div class="panel path"><div class="pathhd"><div><h3>Your path to ${t.target}</h3><p>${t.dated?`${t.days} day${t.days>1?'s':''} until your test.`:'Add your test date below for a plan that fits your calendar. This one assumes 8 weeks.'} The point estimates are rough planning guides, not predictions.</p></div><div class="psts">${stats}</div>${journey}</div>
+    <div class="pathbd">${goalFields(pf)}
+      <h4 class="ph">Where the points are</h4>
+      <p class="hint" style="margin:0 0 14px">${t.top.length?`Fixing these ${t.top.length} skills could be worth about <b>+${t.potential} points</b>${behind&&t.potential<t.gap?'. The rest has to come from steadier accuracy across the whole test':''}.`:'Keep taking full tests to find your next weak spot.'}</p>
+      <div class="pcols">${sec('rw')}${sec('math')}</div>
+      <h4 class="ph" style="margin-top:26px">Weekly plan</h4>
+      <p class="hint" style="margin:0 0 14px">Every day: do Today's session and reach your goal of ${pf.goal} correct answers. Each week adds a focus on the skills below.</p>
+      <div class="wks">${wk}</div></div></div>`;
+}
 function progressHTML(){
   const hist=ld(HK,[]), real=hist.filter(h=>!h.demo), pf=PF(), t=todayCount(), n=streak(), sks=ld(SKK,{});
   const planHTML=planItems().map(o=>`<div class="pl"><div><b>${esc(o.t)}</b><span>${esc(o.d)}</span></div><button class="sbtn mini" data-plan="${o.a}" type="button">Start</button></div>`).join('');
-  const today=`<div class="panel today"><div class="ringrow">${ring(pf.goal?t/pf.goal:0)}<div><div class="r1"><b>${t}</b> of ${pf.goal} correct answers today</div><div class="muted">${n?`${n}-day streak. Keep it going.`:'Get a question right today to start a streak.'}</div></div></div><h4>Suggested next</h4>${planHTML}</div>`;
+  const today=`<div class="panel card today"><div class="mh"><h3>Today</h3><span>${n?n+'-day streak':'No streak yet'}</span></div><div class="bd"><div class="ringrow">${ring(pf.goal?t/pf.goal:0)}<div><div class="r1"><b>${t}</b> of ${pf.goal} correct answers today</div><div class="muted">${n?`${n}-day streak. Keep it going.`:'Get a question right today to start a streak.'}</div></div></div><h4>Suggested next</h4>${planHTML}</div></div>`;
   const totals=real.filter(h=>h.total!=null).slice(-10).map(h=>({v:h.total,label:new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}));
   let trend;
   if(totals.length>=2) trend=`<h4>Estimated total score</h4>${lineChart(totals,pf.target)}`;
@@ -859,21 +1010,23 @@ function progressHTML(){
     const res=h.total!=null?`<b>${h.total}</b> <span class="muted">of 1600</span>`:(h.rw!=null||h.math!=null)?`<b>${h.rw!=null?h.rw:h.math}</b> <span class="muted">of 800</span>`:`<b>${h.c}/${h.n}</b> <span class="muted">correct</span>`;
     return `<tr><td>${new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</td><td>${esc(h.kind)}${h.demo?' <span class="muted">(demo)</span>':''}</td><td>${res}</td><td>${fmt(h.avg)}</td></tr>`;
   }).join('');
-  const histHTML=hist.length?`<div class="panel" style="padding:8px 22px"><table class="fmtt" style="border:0"><tr><th>Date</th><th>Test</th><th>Result</th><th>Avg time</th></tr>${rows}</table></div>`:'';
+  const histHTML=hist.length?`<div class="panel card"><div class="mh"><h3>Recent tests</h3><span>Last ${Math.min(6,hist.length)}</span></div><div class="bd" style="padding:8px 22px"><table class="fmtt" style="border:0"><tr><th>Date</th><th>Test</th><th>Result</th><th>Avg time</th></tr>${rows}</table></div></div>`:'';
   const wk=sec=>{ const l=weakList(sec); return `<div class="wkc"><h3>${SPEC[sec].name}</h3>${l.length?l.map(o=>`<div class="wk"><div><b>${esc(SKN[o.k])}</b><div class="muted" style="font-size:13px">Missed ${o.miss} of ${o.n} so far</div></div><div class="pbar"><i class="bad" style="width:${Math.round(o.rate*100)}%"></i></div></div>`).join('')+`<button class="sbtn mini" data-weak="${sec}" type="button" style="margin-top:10px">Practice these skills</button>`:'<p class="muted" style="margin:6px 0 0;font-size:14.5px">No weak spots yet. Skills show up here after you have seen at least three questions on them.</p>'}</div>`; };
   const nb=ld(MK,[]), cnt=x=>nb.filter(q=>q.section===x).length, nbs=['rw','math'].filter(cnt);
-  const nbHTML=`<div class="panel nbk"><div><h3>Mistake notebook</h3><p>${nbs.length?'Every question you miss is saved here until you answer it correctly.':'Nothing saved. Questions you miss will be saved here until you answer them correctly.'}</p></div>${nbs.length?`<div class="tools">${nbs.map(x=>`<button class="sbtn mini" data-nb="${x}" type="button">Redo ${Math.min(15,cnt(x))} of ${cnt(x)} ${SPEC[x].name} mistake${cnt(x)>1?'s':''}</button>`).join('')}</div>`:''}</div>`;
+  const nbHTML=`<div class="panel card"><div class="mh"><h3>Mistake notebook</h3><span>${nb.length} saved</span></div><div class="bd nbb"><p>${nbs.length?'Every question you miss is saved here and comes back for review after 1, 3, 7 and 16 days.':'Nothing saved yet. Questions you miss will be saved here and come back for review.'}</p>${nbs.length?`<div class="tools">${nbs.map(x=>`<button class="sbtn mini" data-nb="${x}" type="button">Redo ${Math.min(15,cnt(x))} of ${cnt(x)} ${SPEC[x].name} mistake${cnt(x)>1?'s':''}</button>`).join('')}</div>`:''}</div></div>`;
   const map=['rw','math'].map(sec=>`<div class="smsec"><h4>${SPEC[sec].name}</h4>${Object.keys(SPEC[sec].dist).map(d=>`<div class="smd"><div class="smdn">${SPEC[sec].domNames[d]}</div><div class="smg">${SK.filter(r=>r[1]===sec&&r[2]===d).map(r=>{
     const o=sks[r[0]]||{n:0,miss:0}, q=o.n?(o.n-o.miss)/o.n:null, cls=q==null?'na':q<.5?'lo':q<.8?'mid':'hi';
     return `<button class="smt ${cls}" data-skill="${r[0]}" type="button"><span class="smn">${esc(r[3])}</span><span class="smb"><i style="width:${q==null?0:Math.round(q*100)}%"></i></span><span class="smm">${q==null?'Not practiced yet':Math.round(q*100)+'% correct · '+o.n+' seen'}</span></button>`; }).join('')}</div></div>`).join('')}</div>`).join('');
-  const goals=`<div class="panel goals"><div class="flds"><label class="fld"><span>Target total score</span><span class="inp"><input type="number" id="gt" min="400" max="1600" step="10" value="${pf.target||''}" placeholder="1400"><em>of 1600</em></span></label><label class="fld"><span>Daily goal</span><span class="inp"><input type="number" id="gd" min="1" max="500" value="${pf.goal}"><em>correct a day</em></span></label></div>
-    <div class="tools"><button class="sbtn mini" id="exp" type="button">Export progress</button><button class="sbtn mini" id="imq" type="button">Import progress</button><button class="sbtn mini" id="clr" type="button">Clear saved progress</button><span class="tag">${seenCount()} questions seen</span><span class="tag">${srsDue().length} due for review</span><button class="sbtn mini" id="clrs" type="button">Reset seen questions</button></div></div>`;
-  return `<section class="sect" id="progress"><div class="wrap"><h2>Your progress</h2><p class="sub">Saved in this browser. Set a goal, keep a streak and see which skills need work.</p>
-    <div class="dash">${today}<div class="panel trend">${trend}</div></div>
-    <h3 class="h3s">Skill map</h3><p class="sub" style="margin-bottom:14px">Your accuracy on every skill. Select one for a tip and a 10-question set on just that skill.</p>
-    <div class="panel" style="padding:8px 26px 22px">${map}<div class="legend3"><span><i class="lo"></i>Under 50%</span><span><i class="mid"></i>50 to 79%</span><span><i class="hi"></i>80% and up</span><span><i class="na"></i>Not practiced</span></div></div>
-    <div class="prog" style="margin-top:22px">${histHTML||'<div></div>'}<div class="panel" style="padding:24px 26px">${wk('rw')}${wk('math')}</div></div>
-    ${nbHTML}${allReasonsHTML()}${goals}</div></section>`;
+  const stats=pst(t,'correct answers today',true)+pst(n,'day streak')+pst(real.length,'test'+(real.length===1?'':'s')+' taken');
+  return `<section class="sect page" id="progress" data-page="progress"><div class="wrap">
+    <div class="panel card pagebar">${bandHTML('Your progress','Saved in this browser. Set a goal, keep a streak and see which skills need work.',stats)}</div>
+    <div class="dash">${today}<div class="panel card trend"><div class="mh"><h3>Score trend</h3><span>${totals.length>=2?'Last '+totals.length+' full tests':'Builds as you test'}</span></div><div class="bd">${trend}</div></div></div>
+    ${pathHTML()}
+    <div class="panel card" style="margin-top:22px"><div class="mh"><h3>Skill map</h3><span>Select a skill for a tip and a 10-question set</span></div><div class="bd" style="padding:8px 26px 22px">${map}<div class="legend3"><span><i class="lo"></i>Under 50%</span><span><i class="mid"></i>50 to 79%</span><span><i class="hi"></i>80% and up</span><span><i class="na"></i>Not practiced</span></div></div></div>
+    <div class="prog" style="margin-top:22px">${histHTML||'<div></div>'}<div class="panel card"><div class="mh"><h3>Weakest skills</h3><span>After 3 or more answered</span></div><div class="bd">${wk('rw')}${wk('math')}</div></div></div>
+    <div style="margin-top:22px">${nbHTML}</div>
+    ${allReasonsHTML()?`<div style="margin-top:22px">${allReasonsHTML()}</div>`:''}
+    <div style="margin-top:22px">${dataHTML()}</div></div></section>`;
 }
 const PKEYS=[HK,SKK,MK,TG,SEENK,SRSK,'satDaily','satPrefs','satQuick','satTimers'];
 function exportProgress(){
@@ -897,13 +1050,15 @@ function skillModal(k){
     <button class="btn" id="skgo" type="button">Practice 10 questions</button> <button class="btn ghost" data-act="close" type="button">Close</button>`);
   d.querySelector('#skgo').onclick=()=>{ d.remove(); startSkills(r[1],[k]); };
 }
-function refreshProgress(){ const el=$('#progress'); if(!el||!el.parentNode) return; const t=document.createElement('div'); t.innerHTML=progressHTML(); el.replaceWith(t.firstElementChild); bindProgress(); }
+function refreshProgress(){ const el=$('#progress'); if(!el||!el.parentNode) return; const t=document.createElement('div'); t.innerHTML=progressHTML(); el.replaceWith(t.firstElementChild); bindProgress(); showPage(ST.page); }
 function bindProgress(){
   document.querySelectorAll('[data-weak]').forEach(b=>b.onclick=()=>startWeak(b.dataset.weak));
   document.querySelectorAll('[data-nb]').forEach(b=>b.onclick=()=>startNotebook(b.dataset.nb));
   document.querySelectorAll('[data-skill]').forEach(b=>b.onclick=()=>skillModal(b.dataset.skill));
-  document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>{ const [a,x]=b.dataset.plan.split(':'); if(a==='daily') startDaily(); else if(a==='nb') startNotebook(x); else if(a==='weak') startWeak(x); else { const el=document.getElementById(a==='quick'?'quick':'setup'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); } });
-  const gt=$('#gt'), gd=$('#gd');
+  document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>{ const [a,x]=b.dataset.plan.split(':'); if(a==='daily') startDaily(); else if(a==='nb') startNotebook(x); else if(a==='weak') startWeak(x); else go(a==='quick'?'quick':'test'); });
+  const gt=$('#gt'), gd=$('#gd'), gdt=$('#gdt');
+  if(gdt) gdt.onchange=()=>{ setPF('testDate',gdt.value||null); setTimeout(refreshProgress,0); };
+  document.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{ const r=SK.find(x=>x[0]===b.dataset.pk); if(r) startSkills(r[1],[r[0]]); });
   if(gt) gt.onchange=()=>{ const v=Math.round(+gt.value); setPF('target',v>=400&&v<=1600?v:null); setTimeout(refreshProgress,0); };
   if(gd) gd.onchange=()=>{ const v=Math.round(+gd.value); setPF('goal',v>=1&&v<=500?v:20); setTimeout(refreshProgress,0); };
   const ex=$('#exp'); if(ex) ex.onclick=exportProgress;
@@ -924,8 +1079,31 @@ function updQ(){
   const n=Math.max(1,Math.min(60,Math.round(+$('#qn').value)||q.n)), a=allocQuick(q.sec,n,en,false), mins=Math.max(1,Math.round(n*(q.sec==='rw'?71:95)/60));
   el.innerHTML=`<b>${n} question${n>1?'s':''}, about ${mins} min:</b> `+Object.entries(a).filter(e=>e[1]>0).map(([k,c])=>`<span>${esc(SKN[k])} × ${c}</span>`).join('');
 }
+// ----- pages: each section is its own page, chosen by the nav or the URL hash -----
+const PAGES=['home','test','quick','progress','about'], PMAP={setup:'test',inside:'about',format:'about'};
+function pageFromHash(){ const m=(location.hash||'').match(/^#\/(\w+)/); return m&&PAGES.includes(m[1])?m[1]:null; }
+function showPage(pg){
+  if(!PAGES.includes(pg)) pg='home'; ST.page=pg; const site=$('#site'); if(!site) return;
+  site.dataset.page=pg;
+  site.querySelectorAll('.page').forEach(e=>{ e.hidden=e.dataset.page!==pg; });
+  site.querySelectorAll('.nav [data-page]').forEach(b=>{ const on=b.dataset.page===pg; b.classList.toggle('on',on); if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+}
+function go(pg){ pg=PMAP[pg]||pg; showPage(pg); const sc=$('#site'); if(sc) sc.scrollTop=0; window.scrollTo(0,0); try{ if(pageFromHash()!==pg) history.pushState(null,'','#/'+pg); }catch(e){} }
+window.addEventListener('popstate',()=>{ if($('#site')) showPage(pageFromHash()||'home'); });
+window.addEventListener('hashchange',()=>{ if($('#site')) showPage(pageFromHash()||'home'); });
+const pst=(b,t,hl)=>`<div class="pst${hl?' hl':''}"><b>${b}</b><span>${t}</span></div>`;
+const bandHTML=(title,text,stats)=>`<div class="pathhd"><div><h2>${title}</h2><p>${text}</p></div><div class="psts">${stats}</div></div>`;
+function goalFields(pf){
+  return `<div class="pgoals"><div class="pgt"><b>Your goals</b><span>They shape the plan below and Today's session.</span></div><div class="flds"><label class="fld"><span>Target total score</span><span class="inp"><input type="number" id="gt" min="400" max="1600" step="10" value="${pf.target||''}" placeholder="1400"><em>of 1600</em></span></label><label class="fld"><span>Test date</span><span class="inp"><input type="date" id="gdt" value="${pf.testDate||''}"></span></label><label class="fld"><span>Daily goal</span><span class="inp"><input type="number" id="gd" min="1" max="500" value="${pf.goal}"><em>correct a day</em></span></label></div></div>`;
+}
+function dataHTML(){
+  const real=ld(HK,[]).filter(h=>!h.demo).length;
+  return `<div class="panel card"><div class="mh"><h3>Your data</h3><span>Saved in this browser</span></div><div class="bd"><div class="dstats"><div><b>${seenCount()}</b><span>questions seen</span></div><div><b>${srsDue().length}</b><span>due for review</span></div><div><b>${real}</b><span>test${real===1?'':'s'} saved</span></div></div>
+    <p class="hint" style="margin:0 0 12px">Back up your progress to a file, move it to another device, or start fresh.</p>
+    <div class="tools" style="margin:0"><button class="sbtn mini" id="exp" type="button">Export progress</button><button class="sbtn mini" id="imq" type="button">Import progress</button><button class="sbtn mini" id="clrs" type="button">Reset seen questions</button><button class="sbtn mini" id="clr" type="button">Clear saved progress</button></div></div></div>`;
+}
 function home(){
-  clearInterval(ST.tick); ST.screen='';
+  clearInterval(ST.tick); ST.screen=''; setCalc(false);
   const order=[['rw',1],['rw',2],['math',1],['math',2]];
   const sheet=order.map(([sec,n],bi)=>{
     const sp=SPEC[sec], dots=Array.from({length:sp.perModule},(_,i)=>{ const r=Math.random(); return `<i class="${r<.12?'mk':r<.8?'on':''}" style="--d:${bi*260+i*22}ms"></i>`; }).join('');
@@ -934,15 +1112,15 @@ function home(){
   const fld=(k,label)=>`<label class="fld"><span>${label}</span><span class="inp"><input type="number" min="10" max="900" id="tm_${k}" value="${ST.cfg.timers[k]}"><em>sec</em></span></label>`;
   app.innerHTML=`<div class="site" id="site">
   <nav class="nav"><div class="wrap">
-    <div class="brand"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#0e1330"/><circle cx="9" cy="9" r="3.2" fill="#ffd23f"/><circle cx="19" cy="9" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="19" cy="19" r="3.2" fill="#fff"/></svg>SAT Simulator</div>
-    <button class="lnk" data-go="setup">Full test</button><button class="lnk" data-go="quick">Quick practice</button><button class="lnk" data-go="progress">Progress</button><button class="lnk" data-go="inside">What's included</button>
+    <div class="brand" data-go="home" role="link" tabindex="0" style="cursor:pointer"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#0e1330"/><circle cx="9" cy="9" r="3.2" fill="#ffd23f"/><circle cx="19" cy="9" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="19" cy="19" r="3.2" fill="#fff"/></svg>SAT Simulator</div>
+    <div class="navlinks"><button class="lnk" data-go="home" data-page="home">Home</button><button class="lnk" data-go="test" data-page="test">Full test</button><button class="lnk" data-go="quick" data-page="quick">Quick practice</button><button class="lnk" data-go="progress" data-page="progress">Progress</button><button class="lnk" data-go="about" data-page="about">What's included</button></div>
     <button class="lnk thm" id="theme" type="button"></button><button class="sbtn sm" id="go2">Start test</button></div></nav>
 
   <main>
-  <section class="hero"><div class="wrap">
+  <section class="hero page" data-page="home"><div class="wrap">
     <h1>Practice the digital SAT the way you'll take it.</h1>
     <p class="lead">Full-length modules built from the College Board question bank, with the same question mix and order, a timer on every question, a built-in Desmos calculator, and a score estimate when you finish.</p>
-    <div class="cta"><button class="sbtn big" id="go">Start test</button><button class="sbtn big line" data-go="setup">Adjust setup</button></div>
+    <div class="cta"><button class="sbtn big" id="go">Start test</button><button class="sbtn big line" data-go="test">Adjust setup</button></div>
     ${resumeBanner()}
     ${dailyBanner()}
     ${todayChip()}
@@ -950,10 +1128,18 @@ function home(){
     <p class="sheetnote">Each circle is one question. The highlighted modules are the ones you've selected below.</p>
   </div></section>
 
-  <section class="sect" id="setup"><div class="wrap">
-    <h2>Set up your test</h2>
-    <p class="sub">Choose what to take, how you want to practice, and where the questions come from.</p>
-    <div class="panel">
+  <section class="sect page" data-page="home"><div class="wrap">
+    <div class="jcs">
+      <button class="jc" data-go="test" type="button"><div class="mh"><h3>Full test</h3><span>2 h 14 min</span></div><p>Four adaptive modules with the real mix of questions, a clock on every question and a built-in Desmos calculator.</p><b>Set up and start</b></button>
+      <button class="jc" data-go="quick" type="button"><div class="mh"><h3>Quick practice</h3><span>5 to 60 questions</span></div><p>A short set on one subject. Choose the skills and difficulty levels, and reuse questions you have seen.</p><b>Build a set</b></button>
+      <button class="jc" data-go="progress" type="button"><div class="mh"><h3>Your progress</h3><span>${todayCount()} of ${PF().goal} correct today</span></div><p>Your score trend, a path to your target, a map of all 30 skills and a notebook of your mistakes.</p><b>See where you stand</b></button>
+      <button class="jc" data-go="about" type="button"><div class="mh"><h3>What's included</h3><span>Features and format</span></div><p>How the test is laid out, what the practice tools do, and how each module is ordered.</p><b>Take a look</b></button>
+    </div>
+  </div></section>
+
+  <section class="sect page" id="setup" data-page="test"><div class="wrap">
+    <div class="panel card pgcard">
+      ${bandHTML('Set up your test','Choose what to take, how you want to practice, and where the questions come from.',pst('98','questions in a full test')+pst('2h 14m','of testing time')+pst('2','adaptive modules per section',true))}
       <div class="rowset"><div><h3>What to take</h3><p class="why">Module 2 adjusts to how you do on Module 1.</p></div>
         <div class="segs">
           <label class="seg"><input type="radio" name="sec" value="full" ${ST.cfg.sections==='full'?'checked':''}><b>Full test</b><span>4 modules · 2 h 14 min</span></label>
@@ -989,10 +1175,9 @@ function home(){
     </div>
   </div></section>
 
-  <section class="sect" id="quick"><div class="wrap">
-    <h2>Quick practice</h2>
-    <p class="sub">A short set on one subject with the same mix of skills as a real module. Turn off any skill or difficulty level you don't want to practice. It uses the practice settings above.</p>
-    <div class="panel">
+  <section class="sect page" id="quick" data-page="quick"><div class="wrap">
+    <div class="panel card pgcard">
+      ${bandHTML('Quick practice',"A short set on one subject with the same mix of skills as a real module. Turn off any skill or difficulty level you don't want to practice. It uses the practice settings on the Full test page.",pst('30','skills to choose from')+pst('3','difficulty levels')+pst(seenCount(),'questions answered so far',true))}
       <div class="rowset"><div><h3>Subject and length</h3><p class="why">Quick practice covers one subject at a time.</p></div>
         <div><div class="segs" style="grid-template-columns:1fr 1fr">
           <label class="seg"><input type="radio" name="qsec" value="rw" ${ST.quick.sec==='rw'?'checked':''}><b>Reading and Writing</b><span>Passage-based questions</span></label>
@@ -1014,9 +1199,8 @@ function home(){
 
   ${progressHTML()}
 
-  <section class="sect" id="inside"><div class="wrap">
-    <h2>What's included</h2>
-    <p class="sub">Everything is built around practicing under test conditions and learning from your misses.</p>
+  <section class="sect page" id="inside" data-page="about"><div class="wrap">
+    <div class="panel card pagebar">${bandHTML("What's included",'Everything is built around practicing under test conditions and learning from your misses.',pst('4','modules, as on the real test')+pst('30','skills tracked')+pst('1600','point score scale',true))}</div>
     <div class="feat">
       <div><b>The real test layout</b><p>Passage and question side by side, a question map, mark for review, an answer eliminator, a passage highlighter, a module clock you can hide, a 10-minute break between sections and keyboard shortcuts.</p></div>
       <div><b>A clock on every question</b><p>Set a pace target for each question type. Results show where your time went, question by question.</p></div>
@@ -1039,14 +1223,13 @@ function home(){
     </div>
   </div></section>
 
-  <section class="sect" id="format"><div class="wrap">
-    <h2>Test format</h2>
-    <p class="sub">Each module follows the digital SAT's content mix and ordering.</p>
+  <section class="sect page" id="format" data-page="about"><div class="wrap">
+    <div class="panel card"><div class="mh"><h3>Test format</h3><span>Each module follows the digital SAT's content mix and ordering</span></div><div class="bd">
     <table class="fmtt"><tr><th>Section</th><th>Modules</th><th>Per module</th><th>Questions by domain</th></tr>
       <tr><td><b>Reading and Writing</b></td><td>2 × 32 min</td><td>27 questions</td><td>Craft and Structure 8 · Information and Ideas 7 · Standard English Conventions 7 · Expression of Ideas 5</td></tr>
       <tr><td><b>Math</b></td><td>2 × 35 min</td><td>22 questions</td><td>Algebra 8 · Advanced Math 8 · Problem-Solving and Data Analysis 3 · Geometry and Trigonometry 3</td></tr></table>
     <p class="hint" style="margin-top:14px">Reading and Writing questions run by domain and then by skill: Words in Context, Text Structure, Cross-Text, Central Ideas, Evidence, Inferences, Boundaries, Form, Structure, and Sense, Transitions, then Rhetorical Synthesis. Math questions are spread across each domain's skills and run from easy to hard, with about 75% multiple choice and 25% student-produced response.</p>
-  </div></section>
+  </div></div></div></section>
   </main>
 
   <footer class="foot"><div class="wrap">SAT Simulator is an independent practice tool. It is not affiliated with or endorsed by College Board. SAT is a registered trademark of College Board. Score estimates are approximate and won't match an official score exactly.</div></footer>
@@ -1054,7 +1237,7 @@ function home(){
   const site=$('#site');
   const sync=()=>{ const v=(document.querySelector('input[name=sec]:checked')||{}).value||'full'; document.querySelectorAll('#sheet .blk').forEach(b=>b.classList.toggle('dim',v!=='full'&&b.dataset.sec!==v)); };
   document.querySelectorAll('input[name=sec]').forEach(r=>r.addEventListener('change',sync)); sync();
-  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const t=document.getElementById(b.dataset.go); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); });
+  document.querySelectorAll('[data-go]').forEach(b=>{ b.onclick=()=>go(b.dataset.go); if(b.getAttribute('role')==='link') b.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(b.dataset.go); } }; });
   $('#imp').onclick=()=>$('#importfile').click();
   $('#diag').onclick=diagnose; $('#bad').onclick=badReport;
   $('#rst').onclick=()=>{ ST.cfg.timers=Object.assign({},DEF_TIMERS); saveTimers(); home(); };
@@ -1072,6 +1255,7 @@ function home(){
   const rs=$('#rsm'); if(rs) rs.onclick=resumeSession;
   const dy=$('#dly'); if(dy) dy.onclick=startDaily;
   const rd=$('#rsd'); if(rd) rd.onclick=()=>{ if(confirm('Discard your test in progress?')){ clearSession(); home(); } };
+  showPage(pageFromHash()||ST.page||'home');
 }
 $('#importfile').onchange=async e=>{
   const f=e.target.files[0]; if(!f) return;
@@ -1164,7 +1348,7 @@ async function buildQuick(m){
   return orderModule(m.sec,out);
 }
 // cfg is optional: omitted = use the settings on the Quick practice form
-async function startQuick(cfg){
+async function startQuick(cfg){ setCalc(false);
   readSettings();
   const q=cfg||ST.quick;
   if(!cfg) q.n=Math.max(1,Math.min(60,Math.round(+$('#qn').value)||10));
@@ -1194,7 +1378,7 @@ function startRetry(){
   ST.plan=secs.map(sec=>({sec,n:1,retry:true,fixed:per[sec],minutes:per[sec].length*(sec==='rw'?71:95)/60,label:`Retry missed questions: ${SPEC[sec].name}`}));
   beginModule();
 }
-async function startTest(){
+async function startTest(){ setCalc(false);
   ST.cfg.sections=(document.querySelector('input[name=sec]:checked')||{}).value||'full';
   readSettings();
   ST.lists={}; ST.used=new Set(); ST.results=[]; ST.mi=0;
@@ -1325,7 +1509,7 @@ function render(){
     <button class="qnavbtn" data-act="nav">Question ${i+1} of ${n} ▴</button>
     <div class="r"><button class="btn ghost" data-act="back" ${i===0?'disabled':''}>Back</button>
     <button class="btn" data-act="next">${i===n-1?'Review':'Next'}</button></div></div>`;
-  if(m.sec!=='math') $('#calc').style.display='none'; // the real exam has a calculator in Math only
+  if(m.sec!=='math') setCalc(false); // the real exam has a calculator in Math only
   document.documentElement.style.setProperty('--fs',PF().fs/100);
   const sm=$('#stim');
   if(sm) sm.addEventListener('mouseup',e=>{
@@ -1346,6 +1530,7 @@ function render(){
   if(inp) inp.oninput=e=>{ ST.ans[i]=e.target.value.trim().slice(0,6); $('#sprprev').textContent=ST.ans[i]?'Answer preview: '+ST.ans[i]:''; const c=document.querySelector('[data-act=check]'); if(c) c.disabled=!ST.ans[i]; };
   tick();
   scheduleSave();
+  placeCalc();
   if(ST.focusK!=null){ const el=document.querySelector('[data-act=pick][data-k="'+ST.focusK+'"]'); ST.focusK=null; if(el) el.focus(); }
 }
 function tick(){
@@ -1414,8 +1599,16 @@ function refModal(){
 
 // ---------- Desmos ----------
 let desmos=null, desmosLoading=false;
+// The calculator docks on the left, like the real exam: the question panes slide right instead of being covered.
+function setCalc(open){ const c=$('#calc'); c.style.display=open?'flex':'none'; document.body.classList.toggle('calc-docked',!!open); if(open){ placeCalc(); if(desmos) setTimeout(()=>desmos.resize(),200); } }
+function placeCalc(){
+  const c=$('#calc'), m=document.querySelector('.main'); if(!m||c.style.display!=='flex') return;
+  const r=m.getBoundingClientRect(); c.style.top=r.top+'px';
+  if(innerWidth<=800){ c.style.bottom='auto'; c.style.height='50vh'; } else { c.style.bottom=(innerHeight-r.bottom)+'px'; c.style.height=''; }
+}
+window.addEventListener('resize',()=>{ placeCalc(); if(desmos) desmos.resize(); });
 function toggleCalc(){
-  const c=$('#calc'); const show=c.style.display!=='flex'; c.style.display=show?'flex':'none';
+  const c=$('#calc'); const show=c.style.display!=='flex'; setCalc(show);
   if(show&&!desmos&&!desmosLoading){
     desmosLoading=true; $('#calcbody').innerHTML='<div class="center">Loading Desmos…</div>';
     const s=document.createElement('script'); s.src=DESMOS_SRC;
@@ -1423,14 +1616,16 @@ function toggleCalc(){
     s.onerror=()=>{ $('#calcbody').innerHTML='<div class="center">Could not load Desmos (check your internet connection).</div>'; desmosLoading=false; };
     document.head.appendChild(s);
   }
-  if(show&&desmos) setTimeout(()=>desmos.resize(),50);
 }
-$('#calcx').onclick=()=>{ $('#calc').style.display='none'; };
-(function drag(){ const c=$('#calc'),h=$('#calch'); let dx,dy,on=false;
-  h.onmousedown=e=>{ if(e.target.id==='calcx') return; on=true; const r=c.getBoundingClientRect(); dx=e.clientX-r.left; dy=e.clientY-r.top; e.preventDefault(); };
-  document.addEventListener('mousemove',e=>{ if(!on) return; c.style.left=(e.clientX-dx)+'px'; c.style.top=(e.clientY-dy)+'px'; c.style.right='auto'; });
-  document.addEventListener('mouseup',()=>{ if(on&&desmos) desmos.resize(); on=false; });
-  new ResizeObserver(()=>{ if(desmos) desmos.resize(); }).observe(c);
+$('#calcx').onclick=()=>setCalc(false);
+(function grip(){ const g=$('#calcgrip'), root=document.documentElement; let on=false;
+  const clamp=w=>Math.max(300,Math.min(Math.round(innerWidth*.6),Math.round(w)));
+  root.style.setProperty('--calc-w',clamp(+ld('satCalcW',460)||460)+'px');
+  g.addEventListener('pointerdown',e=>{ on=true; g.setPointerCapture(e.pointerId); document.body.style.userSelect='none'; e.preventDefault(); });
+  g.addEventListener('pointermove',e=>{ if(on) root.style.setProperty('--calc-w',clamp(e.clientX)+'px'); });
+  const end=()=>{ if(!on) return; on=false; document.body.style.userSelect=''; sv('satCalcW',parseInt(getComputedStyle(root).getPropertyValue('--calc-w'))||460); if(desmos) desmos.resize(); };
+  g.addEventListener('pointerup',end); g.addEventListener('pointercancel',end);
+  new ResizeObserver(()=>{ if(desmos) desmos.resize(); }).observe($('#calc'));
 })();
 
 // ---------- finishing / results ----------
@@ -1466,7 +1661,7 @@ function dailyCounts(){
 function dailyBanner(){
   if(resumeInfo()) return '';
   const c=dailyCounts(), nd=c.rw.due+c.math.due, nf=c.rw.fill+c.math.fill, mins=Math.round((c.rw.per*71+c.math.per*95)/60);
-  return `<div class="resume daily"><div><b>Today's session</b><span>${nd?`${nd} saved question${nd>1?'s':''} due for review, plus `:''}${nf} new question${nf>1?'s':''} on ${weakList('rw').length+weakList('math').length?'your weakest skills':'a mix of skills'}. About ${mins} minutes, with the answer shown after each miss.</span></div><div class="tools"><button class="sbtn" id="dly" type="button">Start session</button></div></div>`;
+  return `<div class="resume daily"><div><b>Today's session</b><span>${nd?`${nd} saved question${nd>1?'s':''} due for review, plus `:''}${nf} new question${nf>1?'s':''} on ${PF().target?'the skills that move you toward '+PF().target:weakList('rw').length+weakList('math').length?'your weakest skills':'a mix of skills'}. About ${mins} minutes, with the answer shown after each miss.</span></div><div class="tools"><button class="sbtn" id="dly" type="button">Start session</button></div></div>`;
 }
 async function startDaily(){
   readSettings(); ST.cfg.feedback=true;
@@ -1475,7 +1670,7 @@ async function startDaily(){
   ST.lists={}; ST.used=new Set(); ST.results=[]; ST.mi=0; ST.skillUse={};
   const c=dailyCounts(); ST.plan=[];
   ['rw','math'].forEach(sec=>{
-    const due=shuffle(srsDue().filter(q=>q.section===sec)).slice(0,c[sec].due), w=weakList(sec).map(o=>o.k), skills=w.length?w:allKeys(sec);
+    const due=shuffle(srsDue().filter(q=>q.section===sec)).slice(0,c[sec].due), w=PF().target?skillPriority(sec).filter(x=>x.gain>0.5).slice(0,4).map(x=>x.k):weakList(sec).map(o=>o.k), skills=w.length?w:allKeys(sec);
     ST.plan.push({sec,n:1,daily:true,quick:true,fixed:due,fill:c[sec].fill,count:c[sec].fill,skills,diffs:['E','M','H'],mix:{E:.3,M:.45,H:.25},pool:'new',
       minutes:(due.length+c[sec].fill)*(sec==='rw'?71:95)/60,label:`Today's session: ${SPEC[sec].name}`});
   });
@@ -1495,7 +1690,7 @@ function allReasonsHTML(){
   const tags=Object.values(ld(TG,{})); if(!tags.length) return '';
   const c={}; tags.forEach(t=>{ c[t]=(c[t]||0)+1; });
   const top=REASONS.filter(r=>c[r[0]]).sort((a,b)=>c[b[0]]-c[a[0]]);
-  return `<div class="panel nbk" style="display:block"><h3>Why you miss questions</h3><p style="margin-bottom:10px">Based on the ${tags.length} question${tags.length>1?'s':''} in your notebook that you tagged in review mode.</p>${reasonBars(c,tags.length,top)}<p style="margin:12px 0 0;max-width:none"><b>Biggest fix:</b> ${top[0][2]}</p></div>`;
+  return `<div class="panel card"><div class="mh"><h3>Why you miss questions</h3><span>${tags.length} tagged</span></div><div class="bd"><p class="hint" style="margin:0 0 10px">Based on the ${tags.length} question${tags.length>1?'s':''} in your notebook that you tagged in review mode.</p>${reasonBars(c,tags.length,top)}<p style="margin:12px 0 0;max-width:none"><b>Biggest fix:</b> ${top[0][2]}</p></div></div>`;
 }
 function rsChips(q){ const t=ld(TG,{})[q.id]; return `<div class="rsn"><b>Why did you miss it?</b><div class="rsrow">${REASONS.map(r=>`<button class="rsc ${t===r[0]?'on':''}" data-rs="${r[0]}" type="button">${r[1]}</button>`).join('')}</div></div>`; }
 function recordResults(){
@@ -1505,7 +1700,7 @@ function recordResults(){
     n++; const ok=isCorrect(q,r.ans[i]); if(ok) c++; tm+=(r.qtime[i]||0)/1000;
     const isDemo=/^demo|^imp/.test(q.id)||q.fallback; if(isDemo) demo=true;
     const av=r.ans[i]; if(!isDemo&&av!==undefined&&av!==null&&av!=='') seen[q.id]=[Date.now(),ok?1:0];
-    if(q.sk&&!isDemo){ const o=sks[q.sk]=sks[q.sk]||{n:0,miss:0}; o.n++; if(!ok) o.miss++; }
+    if(q.sk&&!isDemo&&av!==undefined&&av!==null&&av!==''){ const o=sks[q.sk]=sks[q.sk]||{n:0,miss:0}; o.n++; if(!ok) o.miss++; }
   }));
   sv(SKK,sks); saveMissed(all); sv(SEENK,trimSeen(seen)); ST._seen=null; addDaily(c);
   const er=estSection('rw'), em=estSection('math'), f=all[0].m;
@@ -1514,7 +1709,7 @@ function recordResults(){
   sv(HK,h.slice(-30));
 }
 async function finishModule(timeUp){
-  clearInterval(ST.tick); ST.screen=''; freeze(); $('#calc').style.display='none';
+  clearInterval(ST.tick); ST.screen=''; freeze(); setCalc(false);
   const m=ST.plan[ST.mi];
   const score=ST.q.filter((q,i)=>isCorrect(q,ST.ans[i])).length;
   ST.results.push({m,qs:ST.q,ans:ST.ans,qtime:ST.qtime,flag:ST.flag,score,timeUp,tgs:ST.q.map(targetOf),hard:m.hard});
