@@ -152,6 +152,22 @@ table.t th,table.t td{border-bottom:1px solid var(--line);padding:7px 8px;text-a
 .blk .dots i.mk{background:var(--hi);border-color:#b58f00}
 .blk footer{font-size:14px;color:var(--mute);font-weight:500}
 @media(prefers-reduced-motion:no-preference){.blk .dots i{animation:fillin .45s both;animation-delay:var(--d)}}
+.sheetbox{padding:26px 34px 4px}.sheetbox .sheet{margin-top:0}.sheetbox .sheetnote{margin-top:14px}
+@media(max-width:860px){.sheetbox{padding:22px 20px 0}}
+.ptask{display:flex;gap:14px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:12px 15px;background:var(--panel);margin-top:10px}
+.ptask.ok{border-color:var(--ok);background:var(--okbg)}.ptask .ptm{flex:1;min-width:0}.ptask b{display:block}.ptask span{display:block;color:var(--mute);font-size:13.5px;margin:2px 0 7px}
+.pbarw{height:7px;border-radius:5px;background:var(--line);overflow:hidden}.pbarw i{display:block;height:100%;background:var(--ult);border-radius:5px;transition:width .4s}.ptask.ok .pbarw i{background:var(--ok)}
+.cwk{border:1px solid var(--line);border-radius:16px;padding:18px 20px;background:var(--panel);box-shadow:0 0 0 3px var(--tint)}.cwk h5{margin:0 0 4px;font-size:18px}
+.plnote{margin:12px 0 0;padding:10px 14px;border-radius:10px;background:var(--tint);font-size:14px}
+.wkw.cur{border-color:var(--ult);box-shadow:0 0 0 2px var(--tint)}.wkw .wkn em{font-style:normal}
+.rvh{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap}.rvh .big{font-size:42px;font-weight:800;line-height:1}
+.rvm h4{margin:18px 0 8px}.rvdots{display:flex;flex-wrap:wrap;gap:5px}.rvdots i{width:15px;height:15px;border-radius:50%;background:#c9d0e6}.rvdots i.g{background:var(--ok,#0f9d7a)}.rvdots i.r{background:var(--bad,#d93b55)}
+.rvt{width:100%;border-collapse:collapse;font-size:14px}.rvt td,.rvt th{padding:6px 8px;border-bottom:1px solid #e5e8f2;text-align:left}
+.rvlist{max-height:430px;overflow:auto}
+#tipx{position:fixed;z-index:200;display:none;pointer-events:none;background:#0d1636;color:#fff;border-radius:9px;padding:8px 12px;font:13px/1.45 system-ui;box-shadow:0 6px 22px rgba(0,0,0,.35);max-width:260px}#tipx b{display:block;margin-bottom:2px}
+rect.hit{fill:rgba(0,0,0,0);cursor:pointer}rect.hit:hover{fill:rgba(58,79,240,.14)}
+.tbar{display:inline-block;width:70px;height:7px;border-radius:5px;background:var(--line);vertical-align:middle;margin-right:8px;overflow:hidden}.tbar i{display:block;height:100%;background:var(--ok,#0f9d7a)}.tbar.over i{background:var(--bad,#d93b55)}
+.rvt tr[data-rvq]{cursor:pointer}.rvt tr[data-rvq]:hover{background:var(--tint,#eceffe)}
 @keyframes fillin{from{background:transparent;border-color:#aab2c8;transform:scale(.6)}60%{transform:scale(1.15)}}
 .sheetnote{margin:12px 2px 0;color:var(--mute);font-size:14px}
 .sect{padding:56px 0 8px;scroll-margin-top:64px}
@@ -338,12 +354,20 @@ mark.hl{background:#ffe27a;color:inherit;padding:0;border-radius:2px}
 .gl{stroke:var(--line)}
 [hidden]{display:none!important}
 /* background: soft colour glows plus a field of answer-sheet bubbles */
-.site{min-height:100vh;background:radial-gradient(900px 520px at 6% -4%,rgba(58,79,240,.17),transparent 62%),radial-gradient(760px 480px at 96% 6%,rgba(255,200,61,.22),transparent 58%),radial-gradient(800px 560px at 50% 108%,rgba(58,79,240,.12),transparent 62%),var(--bg);background-attachment:fixed}
+.site{min-height:100vh;background:var(--bg)}
+.site::after{content:"";position:fixed;inset:-18%;z-index:0;pointer-events:none;background:radial-gradient(38% 34% at 14% 12%,rgba(58,79,240,.28),transparent 70%),radial-gradient(34% 32% at 86% 18%,rgba(255,200,61,.34),transparent 70%),radial-gradient(40% 36% at 52% 92%,rgba(15,157,122,.13),transparent 70%),radial-gradient(30% 30% at 76% 64%,rgba(58,79,240,.12),transparent 70%);animation:drift 16s ease-in-out infinite alternate;will-change:transform}
+@keyframes drift{0%{transform:translate3d(-3%,-2%,0) scale(1)}50%{transform:translate3d(4%,3%,0) scale(1.1) rotate(2deg)}100%{transform:translate3d(-2%,5%,0) scale(1.03) rotate(-2deg)}}
+@keyframes bubdrift{to{transform:translate3d(152px,152px,0)}}
+@keyframes bubglow{0%,100%{opacity:.8}50%{opacity:1}}
 .site::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background-image:radial-gradient(circle,rgba(255,200,61,.62) 0 5px,transparent 5.5px),radial-gradient(circle,rgba(58,79,240,.26) 0 5px,transparent 5.5px),radial-gradient(circle,transparent 0 5.5px,rgba(58,79,240,.14) 6px 7px,transparent 7.5px);
   background-size:152px 152px,152px 152px,38px 38px;background-position:57px 95px,19px 57px,0 0;
   -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.95),rgba(0,0,0,.3) 55%,rgba(0,0,0,.6));mask-image:linear-gradient(180deg,rgba(0,0,0,.95),rgba(0,0,0,.3) 55%,rgba(0,0,0,.6))}
-.site>.nav,.site>main,.site>.foot{position:relative;z-index:1}
+.site::before{display:none}
+#bgc{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;-webkit-mask-image:linear-gradient(180deg,#000,rgba(0,0,0,.5));mask-image:linear-gradient(180deg,#000,rgba(0,0,0,.5))}
+@media print{#bgc{display:none}}
+@media(prefers-reduced-motion:reduce){.site::before,.site::after{animation:none}}
+.site>.nav,.site>.nav~*,.site>main,.site>.foot{position:relative;z-index:1}
 .nav{background:rgba(244,246,252,.82)}
 .navlinks{display:contents}
 .pgoals .inp em{white-space:nowrap}
@@ -476,7 +500,8 @@ mark.hl{background:#ffe27a;color:inherit;padding:0;border-radius:2px}
   html[data-theme=dark] .seg:hover,html[data-theme=dark] .chk:hover{border-color:#4a5688}
   html[data-theme=dark] .sbtn.line:hover{background:var(--ink);color:var(--bg)}
   html[data-theme=dark] .inp input{color:var(--ink)}
-  html[data-theme=dark] .site{background:radial-gradient(900px 520px at 6% -4%,rgba(90,110,255,.22),transparent 62%),radial-gradient(760px 480px at 96% 6%,rgba(255,200,61,.09),transparent 58%),radial-gradient(800px 560px at 50% 108%,rgba(90,110,255,.14),transparent 62%),var(--bg);background-attachment:fixed}
+  html[data-theme=dark] .site{background:var(--bg)}
+  html[data-theme=dark] .site::after{background:radial-gradient(38% 34% at 14% 12%,rgba(90,110,255,.26),transparent 70%),radial-gradient(34% 32% at 86% 18%,rgba(255,200,61,.10),transparent 70%),radial-gradient(40% 36% at 52% 92%,rgba(53,201,160,.12),transparent 70%),radial-gradient(30% 30% at 76% 64%,rgba(90,110,255,.14),transparent 70%)}
   html[data-theme=dark] .site::before{background-image:radial-gradient(circle,rgba(255,200,61,.42) 0 5px,transparent 5.5px),radial-gradient(circle,rgba(120,138,255,.34) 0 5px,transparent 5.5px),radial-gradient(circle,transparent 0 5.5px,rgba(154,168,255,.16) 6px 7px,transparent 7.5px)}
   html[data-theme=dark] .hero{background:none}
   html[data-theme=dark] .pgoals{background:#18214a}
@@ -964,6 +989,31 @@ function skillPriority(sec){
     return {k:r[0],name:r[3],sec,dom:r[2],n:o.n,acc,gain:Math.max(0,.9-acc)*w[r[0]]*2*PTS[sec]}; }).sort((a,b)=>b.gain-a.gain);
 }
 function currentLevel(){ const real=ld(HK,[]).filter(h=>!h.demo&&h.total!=null).slice(-3); return real.length?Math.round(real.reduce((a,h)=>a+h.total,0)/real.length/10)*10:null; }
+function planState(){ return ld(PLK,null); }
+function planWeekIdx(pl){ return Math.max(0,Math.floor((Date.now()-pl.start)/(7*864e5))); }
+// Keeps a note of what changed when your accuracy moves a skill in or out of this week's top three.
+function planSync(t){
+  const pl=t.pl; if(!pl||t.over) return; const cur=t.plan[t.cw], keys=cur.focus.slice(0,3).map(x=>x.k), old=pl.top&&pl.top.w===t.cw?pl.top.k:null;
+  if(old&&(old.length!==keys.length||old.some(k=>!keys.includes(k)))){ const nm=k=>SKN[k]||k, add=keys.filter(k=>!old.includes(k)).map(nm), drop=old.filter(k=>!keys.includes(k)).map(nm);
+    pl.note={w:t.cw+1,txt:(add.length?'Added '+add.join(', ')+'.':'')+(drop.length?' '+drop.join(', ')+' moved down because you improved or others now matter more.':'')}; }
+  pl.top={w:t.cw,k:keys}; pl.focus=pl.focus||{}; pl.focus[t.cw]=cur.focus.map(x=>x.k); sv(PLK,pl);
+}
+function planSection(t,pf){
+  const pl=t.pl, chips=p=>p.focus.length?p.focus.map(x=>`<span class="chp ${x.sec}">${esc(x.name)}</span>`).join(''):'<span class="chp">Mixed practice</span>';
+  const grid=`<div class="wks">${t.plan.map(p=>`<div class="wkw${p.test?' tst':''}${p.cur?' cur':''}"><div class="wkn">Week ${p.w}${p.past?'<em>Done</em>':p.cur?'<em>This week</em>':p.test?`<em>${p.w===t.weeks?'Final full test':'Full test'}</em>`:''}</div>${chips(p)}</div>`).join('')}</div>`;
+  if(!pl) return `<h4 class="ph" style="margin-top:26px">Weekly plan</h4><p class="hint" style="margin:0 0 14px">Start the plan to track each week. It rebalances as your accuracy changes, so you always work on what costs you the most points.</p><div class="tools" style="margin:0 0 16px"><button class="sbtn" id="plstart" type="button">Start my plan</button></div>${grid}`;
+  if(t.over) return `<h4 class="ph" style="margin-top:26px">Weekly plan</h4><div class="cwk"><h5>Your plan is finished</h5><p class="hint" style="margin:0">Take a full test to see where you landed, then restart the plan from today.</p><div class="tools" style="margin:12px 0 0"><button class="sbtn" id="plreset" type="button">Restart plan</button></div></div>`;
+  planSync(t);
+  const cur=t.plan[t.cw], wl=(pl.wk&&pl.wk[t.cw])||{}, ws=pl.start+t.cw*7*864e5, fullDone=ld(HK,[]).some(h=>!h.demo&&h.kind==='Full test'&&h.t>=ws);
+  const tasks=cur.focus.map(x=>{ const [n,c]=wl[x.k]||[0,0], done=n>=t.qpw; return {done,html:`<div class="ptask${done?' ok':''}"><div class="ptm"><b>${esc(x.name)}</b><span>${n} of ${t.qpw} questions${n?' · '+Math.round(c/n*100)+'% correct this week':''} · ${x.n?Math.round(x.acc*100)+'% overall':'not practiced yet'}</span><div class="pbarw"><i style="width:${Math.min(100,Math.round(n/t.qpw*100))}%"></i></div></div><button class="sbtn mini" data-pk="${x.k}" type="button">${done?'More':'Practice'}</button></div>`}; });
+  const tc=pf.goal?Math.min(1,todayCount()/pf.goal):0;
+  const extra=`<div class="ptask${tc>=1?' ok':''}"><div class="ptm"><b>Daily session</b><span>${todayCount()} of ${pf.goal} correct today. Reviews your missed questions and fills the rest with new ones.</span><div class="pbarw"><i style="width:${Math.round(tc*100)}%"></i></div></div><button class="sbtn mini" data-plan="daily:" type="button">Start</button></div>`
+    +(cur.test?`<div class="ptask${fullDone?' ok':''}"><div class="ptm"><b>${cur.w===t.weeks?'Final full test':'Full test'}</b><span>${fullDone?'Done this week. Your level has been updated.':'A full test resets your level, which re-ranks the skills above.'}</span></div><button class="sbtn mini" data-plan="test:" type="button">${fullDone?'Again':'Set up'}</button></div>`:'');
+  const done=tasks.filter(x=>x.done).length+(cur.test&&fullDone?1:0), tot=tasks.length+(cur.test?1:0);
+  const note=pl.note&&pl.note.w===t.cw+1?`<div class="plnote"><b>Plan updated.</b> ${esc(pl.note.txt)}</div>`:'';
+  const behind=t.gap!=null&&t.gap<=0?`<div class="plnote">You are at or above your target. Raise it above to keep the plan pushing you.</div>`:'';
+  return `<h4 class="ph" style="margin-top:26px">Weekly plan</h4><div class="cwk"><h5>Week ${t.cw+1} of ${t.weeks}</h5><p class="hint" style="margin:0">${done} of ${tot} tasks done. Each skill target is ${t.qpw} questions, sized to the ${t.gap!=null&&t.gap>0?t.gap+'-point gap to your target':'your current level'}${t.days&&t.days<=14?' and the days left':''}. Skills change as your accuracy changes.</p>${tasks.map(x=>x.html).join('')}${extra}${note}${behind}</div><h4 class="ph" style="margin-top:22px">All weeks</h4>${grid}<div class="tools" style="margin:14px 0 0"><button class="sbtn mini" id="plreset" type="button">Restart plan</button></div>`;
+}
 function targetPlan(){
   const pf=PF(); if(!pf.target) return null;
   const cur=currentLevel(), gap=cur==null?null:pf.target-cur;
@@ -971,9 +1021,16 @@ function targetPlan(){
   const weeks=days?Math.max(1,Math.min(16,Math.ceil(days/7))):8;
   const all=skillPriority('rw').concat(skillPriority('math')).sort((a,b)=>b.gain-a.gain), pool=all.filter(x=>x.gain>0.5);
   const bySec={rw:pool.filter(x=>x.sec==='rw').slice(0,3),math:pool.filter(x=>x.sec==='math').slice(0,3)}, top=bySec.rw.concat(bySec.math), potential=Math.round(top.reduce((a,x)=>a+x.gain,0)/10)*10;
-  const plan=[]; for(let i=0;i<weeks;i++){ const f=pool.length?[pool[(2*i)%pool.length],pool[(2*i+1)%pool.length]].filter((x,j,a)=>a.indexOf(x)===j):[];
-    plan.push({w:i+1,focus:f,test:i===weeks-1||(weeks>3&&i%2===1)}); }
-  return {target:pf.target,cur,gap,days,weeks,top,bySec,potential,plan,dated:!!days};
+  const pl=planState(); let wks=weeks; if(pl&&days) wks=Math.max(1,Math.min(16,Math.ceil((new Date(pf.testDate+'T00:00:00')-pl.start)/(7*864e5)))); else if(pl) wks=pl.weeks||8;
+  const cw=pl?Math.min(planWeekIdx(pl),wks-1):0, over=!!pl&&planWeekIdx(pl)>=wks;
+  const mastered=x=>x.n>=10&&x.acc>=.85, ranked=pool.filter(x=>!mastered(x)), R=ranked.length?ranked:pool;
+  const qpw=(cur==null?12:gap>150?20:gap>0?15:10)+(days&&days<=14?5:0);
+  const pick=k=>{ if(!R.length) return []; const n=k===0?3:2, st=k===0?0:3+2*(k-1); return Array.from({length:n},(_,i)=>R[(st+i)%R.length]).filter((x,j,ar)=>ar.indexOf(x)===j); };
+  const wkLog=(pl&&pl.wk&&pl.wk[cw])||{}, plan=[];
+  for(let i=0;i<wks;i++){ const test=i===wks-1||(wks>3&&i%2===1);
+    if(pl&&i<cw) plan.push({w:i+1,test,past:true,focus:((pl.focus&&pl.focus[i])||[]).map(k=>all.find(x=>x.k===k)).filter(Boolean)});
+    else{ const f=pick(i-cw); if(pl&&i===cw) Object.keys(wkLog).forEach(k=>{ const x=all.find(y=>y.k===k); if(x&&f.length<6&&!f.includes(x)) f.push(x); }); plan.push({w:i+1,test,cur:!!pl&&i===cw,focus:f}); } }
+  return {target:pf.target,cur,gap,days,weeks:wks,top,bySec,potential,plan,dated:!!days,pl,cw,over,qpw};
 }
 function pathHTML(){
   const pf=PF(), t=targetPlan();
@@ -987,15 +1044,12 @@ function pathHTML(){
   const sec=sk=>{ const list=t.bySec[sk]; if(!list.length) return `<div class="psec ${sk}"><h4>${SPEC[sk].name}</h4><p class="hint">Your measured skills here are already near 90%.</p></div>`;
     const pts=Math.round(list.reduce((a,x)=>a+x.gain,0)/5)*5, doms=[...new Set(list.map(x=>x.dom))];
     return `<div class="psec ${sk}"><div class="psh"><h4>${SPEC[sk].name}</h4><span class="ptot">up to +${pts}</span></div>${doms.map(d=>`<div class="pdom">${esc(SPEC[sk].domNames[d])}</div>${list.filter(x=>x.dom===d).map(x=>`<div class="pk"><div class="pkm"><b>${esc(x.name)}</b><span>${x.n?Math.round(x.acc*100)+'% correct · '+x.n+' answered':'Not practiced yet'}</span><i class="pkb"><u style="width:${Math.max(6,Math.round(x.gain/max*100))}%"></u></i></div><div class="pkg">+${Math.max(5,Math.round(x.gain/5)*5)}</div><button class="sbtn mini" data-pk="${x.k}" type="button">Practice</button></div>`).join('')}`).join('')}</div>`; };
-  const wk=t.plan.slice(0,t.weeks).map(p=>`<div class="wkw${p.test?' tst':''}"><div class="wkn">Week ${p.w}${p.test?`<em>${p.w===t.weeks?'Final full test':'Full test'}</em>`:''}</div>${p.focus.length?p.focus.map(x=>`<span class="chp ${x.sec}">${esc(x.name)}</span>`).join(''):'<span class="chp">Mixed practice</span>'}</div>`).join('');
   return `<div class="panel path"><div class="pathhd"><div><h3>Your path to ${t.target}</h3><p>${t.dated?`${t.days} day${t.days>1?'s':''} until your test.`:'Add your test date below for a plan that fits your calendar. This one assumes 8 weeks.'} The point estimates are rough planning guides, not predictions.</p></div><div class="psts">${stats}</div>${journey}</div>
     <div class="pathbd">${goalFields(pf)}
       <h4 class="ph">Where the points are</h4>
       <p class="hint" style="margin:0 0 14px">${t.top.length?`Fixing these ${t.top.length} skills could be worth about <b>+${t.potential} points</b>${behind&&t.potential<t.gap?'. The rest has to come from steadier accuracy across the whole test':''}.`:'Keep taking full tests to find your next weak spot.'}</p>
       <div class="pcols">${sec('rw')}${sec('math')}</div>
-      <h4 class="ph" style="margin-top:26px">Weekly plan</h4>
-      <p class="hint" style="margin:0 0 14px">Every day: do Today's session and reach your goal of ${pf.goal} correct answers. Each week adds a focus on the skills below.</p>
-      <div class="wks">${wk}</div></div></div>`;
+      ${planSection(t,pf)}</div></div>`;
 }
 function progressHTML(){
   const hist=ld(HK,[]), real=hist.filter(h=>!h.demo), pf=PF(), t=todayCount(), n=streak(), sks=ld(SKK,{});
@@ -1006,11 +1060,11 @@ function progressHTML(){
   if(totals.length>=2) trend=`<h4>Estimated total score</h4>${lineChart(totals,pf.target)}`;
   else if(real.length) trend=`<h4>Accuracy by session</h4>${accChart(real.slice(-12).map(h=>({p:h.n?h.c/h.n:0,label:`${new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}: ${h.c}/${h.n} correct (${h.kind})`})))}<p class="hint" style="margin-top:6px">Finish two full tests to see your score trend.</p>`;
   else trend=`<h4>Your trend</h4><p class="muted" style="margin:6px 0 0">Finish a test and your score or accuracy trend will show up here.</p>`;
-  const rows=hist.slice(-6).reverse().map(h=>{
+  const rvSet=new Set(ld(RVK,[]).map(r=>r.t)), rows=hist.slice().reverse().map(h=>{
     const res=h.total!=null?`<b>${h.total}</b> <span class="muted">of 1600</span>`:(h.rw!=null||h.math!=null)?`<b>${h.rw!=null?h.rw:h.math}</b> <span class="muted">of 800</span>`:`<b>${h.c}/${h.n}</b> <span class="muted">correct</span>`;
-    return `<tr><td>${new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</td><td>${esc(h.kind)}${h.demo?' <span class="muted">(demo)</span>':''}</td><td>${res}</td><td>${fmt(h.avg)}</td></tr>`;
+    return `<tr><td>${new Date(h.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</td><td>${esc(h.kind)}${h.demo?' <span class="muted">(demo)</span>':''}</td><td>${res}</td><td>${fmt(h.avg)}</td><td><button class="sbtn mini" data-rv="${h.t}" type="button">${rvSet.has(h.t)?'View':'Summary'}</button></td></tr>`;
   }).join('');
-  const histHTML=hist.length?`<div class="panel card"><div class="mh"><h3>Recent tests</h3><span>Last ${Math.min(6,hist.length)}</span></div><div class="bd" style="padding:8px 22px"><table class="fmtt" style="border:0"><tr><th>Date</th><th>Test</th><th>Result</th><th>Avg time</th></tr>${rows}</table></div></div>`:'';
+  const histHTML=hist.length?`<div class="panel card"><div class="mh"><h3>Past tests</h3><span>${hist.length} saved · select View for details</span></div><div class="bd rvlist" style="padding:8px 22px"><table class="fmtt" style="border:0"><tr><th>Date</th><th>Test</th><th>Result</th><th>Avg time</th><th></th></tr>${rows}</table></div></div>`:'';
   const wk=sec=>{ const l=weakList(sec); return `<div class="wkc"><h3>${SPEC[sec].name}</h3>${l.length?l.map(o=>`<div class="wk"><div><b>${esc(SKN[o.k])}</b><div class="muted" style="font-size:13px">Missed ${o.miss} of ${o.n} so far</div></div><div class="pbar"><i class="bad" style="width:${Math.round(o.rate*100)}%"></i></div></div>`).join('')+`<button class="sbtn mini" data-weak="${sec}" type="button" style="margin-top:10px">Practice these skills</button>`:'<p class="muted" style="margin:6px 0 0;font-size:14.5px">No weak spots yet. Skills show up here after you have seen at least three questions on them.</p>'}</div>`; };
   const nb=ld(MK,[]), cnt=x=>nb.filter(q=>q.section===x).length, nbs=['rw','math'].filter(cnt);
   const nbHTML=`<div class="panel card"><div class="mh"><h3>Mistake notebook</h3><span>${nb.length} saved</span></div><div class="bd nbb"><p>${nbs.length?'Every question you miss is saved here and comes back for review after 1, 3, 7 and 16 days.':'Nothing saved yet. Questions you miss will be saved here and come back for review.'}</p>${nbs.length?`<div class="tools">${nbs.map(x=>`<button class="sbtn mini" data-nb="${x}" type="button">Redo ${Math.min(15,cnt(x))} of ${cnt(x)} ${SPEC[x].name} mistake${cnt(x)>1?'s':''}</button>`).join('')}</div>`:''}</div></div>`;
@@ -1028,7 +1082,8 @@ function progressHTML(){
     ${allReasonsHTML()?`<div style="margin-top:22px">${allReasonsHTML()}</div>`:''}
     <div style="margin-top:22px">${dataHTML()}</div></div></section>`;
 }
-const PKEYS=[HK,SKK,MK,TG,SEENK,SRSK,'satDaily','satPrefs','satQuick','satTimers'];
+const RVK='satReviews', PLK='satPlan', QBK='satQBank';
+const PKEYS=[HK,SKK,MK,TG,SEENK,SRSK,'satDaily','satPrefs','satQuick','satTimers',RVK,QBK,PLK];
 function exportProgress(){
   const o={app:'sat-simulator',v:1,data:{}}; PKEYS.forEach(k=>{ const v=ld(k,null); if(v!=null) o.data[k]=v; });
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'})); a.download='sat-simulator-progress-'+dkey(new Date())+'.json';
@@ -1050,11 +1105,34 @@ function skillModal(k){
     <button class="btn" id="skgo" type="button">Practice 10 questions</button> <button class="btn ghost" data-act="close" type="button">Close</button>`);
   d.querySelector('#skgo').onclick=()=>{ d.remove(); startSkills(r[1],[k]); };
 }
+function reviewModal(t){
+  const h=ld(HK,[]).find(x=>x.t===t), rv=ld(RVK,[]).find(x=>x.t===t); if(!h) return;
+  const date=new Date(h.t).toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+  const head=h.total!=null?`<div class="big">${h.total}</div><div class="muted">of 1600 · Reading and Writing ${h.rw}, Math ${h.math}</div>`:(h.rw!=null||h.math!=null)?`<div class="big">${h.rw!=null?h.rw:h.math}</div><div class="muted">of 800 · estimated</div>`:`<div class="big">${h.c}/${h.n}</div><div class="muted">correct</div>`;
+  let body='<p class="hint">Question-level detail was not saved for this older test.</p>';
+  if(rv){ const sk={}, all=[]; rv.mods.forEach(m=>m.qs.forEach(q=>{ all.push(q); if(!q.sk) return; const o=sk[q.sk]=sk[q.sk]||{n:0,c:0,t:0}; if(q.ok!==null){ o.n++; o.c+=q.ok; } o.t+=q.t; }));
+    const over=all.filter(q=>q.t>q.tg&&q.tg).length, om=all.filter(q=>q.ok===null).length;
+    const mods=rv.mods.map(m=>{ const c=m.qs.filter(q=>q.ok===1).length; return `<h4>${esc(m.name||SPEC[m.sec].name)} <span class="muted" style="font-weight:400">· ${c} of ${m.qs.length} correct</span></h4><div class="rvdots">${m.qs.map((q,i)=>`<i class="${q.ok===1?'g':q.ok===0?'r':''}" title="Q${i+1} · ${esc(SKN[q.sk]||'')} · ${q.t}s${q.tg?' (target '+q.tg+'s)':''}${q.ok===null?' · omitted':''}"></i>`).join('')}</div>`; }).join('');
+    const rows=Object.keys(sk).map(k=>({k,...sk[k]})).filter(o=>o.n).sort((a,b)=>a.c/a.n-b.c/b.n).map(o=>`<tr><td>${esc(SKN[o.k]||o.k)}</td><td>${o.c}/${o.n}</td><td>${Math.round(o.c/o.n*100)}%</td><td>${o.n?Math.round(o.t/o.n):0}s avg</td></tr>`).join('');
+    body=`<div class="muted" style="margin-top:12px">${over} question${over===1?'':'s'} over the time target${om?' · '+om+' omitted':''}</div>${mods}<h4>By skill, weakest first</h4><table class="rvt">${rows||'<tr><td>No skill data</td></tr>'}</table>`; }
+  let full='', src=null;
+  if(rv&&rv.v===2){ const qb=ld(QBK,{});
+    src=rv.mods.map(m=>({m:{sec:m.sec,label:m.name,n:m.n,quick:m.quick,retry:m.retry,nb:m.nb},qs:m.qs.map(x=>qb[x.id]||{id:x.id,sk:x.sk,skillName:SKN[x.sk]||'',type:'mcq',options:[],correct:[],stem:'<i>This question was not saved.</i>',domain:'',diff:x.d}),ans:m.qs.map(x=>x.a),qtime:m.qs.map(x=>x.t*1000),tgs:m.qs.map(x=>x.tg),flag:Object.fromEntries(m.qs.map((x,i)=>[i,x.f])),okx:m.qs.map(x=>x.ok===1)}));
+    const rows=rv.mods.map((m,ri)=>m.qs.map((x,i)=>`<tr data-rvq="${ri}-${i}"><td>${ri+1}.${i+1}</td><td>${esc(SKN[x.sk]||'—')}</td><td>${{E:'Easy',M:'Medium',H:'Hard'}[x.d]||''}</td><td>${x.ok===null?'Omitted':x.ok?'Correct':'Wrong'}</td><td data-tip="${esc(timeTip('Question '+(i+1)+' · '+(SKN[x.sk]||''),x.t,x.tg,x.ok===null?'Omitted':x.ok?'Correct':'Wrong'))}"><span class="tbar${x.t>x.tg?' over':''}"><i style="width:${Math.min(100,Math.round(x.t/Math.max(1,x.tg)*50))}%"></i></span>${fmt(x.t)} <span class="muted">/ ${fmt(x.tg)}</span></td></tr>`).join('')).join('');
+    full=`<h4>Time on each question</h4><div class="pacewrap"><div style="min-width:640px">${paceChart(src)}</div></div><p class="hint" style="margin:6px 0 0">Hover a bar for the exact time. Select a row to read the question and its explanation.</p><div class="tools" style="margin:12px 0 6px"><button class="sbtn mini" data-rvall="all" type="button">Review all questions</button><button class="sbtn mini" data-rvall="missed" type="button">Review missed</button></div><div class="rvlist" style="max-height:340px"><table class="rvt"><tr><th>#</th><th>Skill</th><th>Level</th><th>Result</th><th>Time / target</th></tr>${rows}</table></div>`; }
+  const d=modal(`<div class="rvm"><div class="rvh"><div><div class="muted">${esc(h.kind)}${h.demo?' (demo questions)':''} · ${date}</div>${head}</div><button class="sbtn" data-act="close" type="button">Close</button></div>${body}${full}</div>`);
+  d.querySelector('.modal').style.maxWidth='880px';
+  d.querySelectorAll('[data-rvall]').forEach(b=>b.onclick=()=>openReview(b.dataset.rvall,src));
+  d.querySelectorAll('[data-rvq]').forEach(r=>r.onclick=()=>openReview('all',src,r.dataset.rvq.split('-').map(Number)));
+}
 function refreshProgress(){ const el=$('#progress'); if(!el||!el.parentNode) return; const t=document.createElement('div'); t.innerHTML=progressHTML(); el.replaceWith(t.firstElementChild); bindProgress(); showPage(ST.page); }
 function bindProgress(){
   document.querySelectorAll('[data-weak]').forEach(b=>b.onclick=()=>startWeak(b.dataset.weak));
   document.querySelectorAll('[data-nb]').forEach(b=>b.onclick=()=>startNotebook(b.dataset.nb));
   document.querySelectorAll('[data-skill]').forEach(b=>b.onclick=()=>skillModal(b.dataset.skill));
+  document.querySelectorAll('[data-rv]').forEach(b=>b.onclick=()=>reviewModal(+b.dataset.rv));
+  const ps=$('#plstart'); if(ps) ps.onclick=()=>{ const d=new Date(); d.setHours(0,0,0,0); const t=targetPlan(); sv(PLK,{start:d.getTime(),weeks:t?t.weeks:8,wk:{},focus:{}}); refreshProgress(); };
+  const pr=$('#plreset'); if(pr) pr.onclick=()=>{ if(confirm('Restart your weekly plan from today? Your skill stats are kept.')){ try{ localStorage.removeItem(PLK); }catch(e){} refreshProgress(); } };
   document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>{ const [a,x]=b.dataset.plan.split(':'); if(a==='daily') startDaily(); else if(a==='nb') startNotebook(x); else if(a==='weak') startWeak(x); else go(a==='quick'?'quick':'test'); });
   const gt=$('#gt'), gd=$('#gd'), gdt=$('#gdt');
   if(gdt) gdt.onchange=()=>{ setPF('testDate',gdt.value||null); setTimeout(refreshProgress,0); };
@@ -1110,7 +1188,7 @@ function home(){
     return `${bi===2?'<div class="gap"></div>':''}<div class="blk ${sec}" data-sec="${sec}" style="flex:${sp.minutes}"><header>${sp.name}<span>Module ${n}</span></header><div class="dots" aria-hidden="true">${dots}</div><footer>${sp.perModule} questions · ${sp.minutes} minutes</footer></div>`;
   }).join('');
   const fld=(k,label)=>`<label class="fld"><span>${label}</span><span class="inp"><input type="number" min="10" max="900" id="tm_${k}" value="${ST.cfg.timers[k]}"><em>sec</em></span></label>`;
-  app.innerHTML=`<div class="site" id="site">
+  app.innerHTML=`<div class="site" id="site"><canvas id="bgc" aria-hidden="true"></canvas>
   <nav class="nav"><div class="wrap">
     <div class="brand" data-go="home" role="link" tabindex="0" style="cursor:pointer"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#0e1330"/><circle cx="9" cy="9" r="3.2" fill="#ffd23f"/><circle cx="19" cy="9" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="19" cy="19" r="3.2" fill="#fff"/></svg>SAT Simulator</div>
     <div class="navlinks"><button class="lnk" data-go="home" data-page="home">Home</button><button class="lnk" data-go="test" data-page="test">Full test</button><button class="lnk" data-go="quick" data-page="quick">Quick practice</button><button class="lnk" data-go="progress" data-page="progress">Progress</button><button class="lnk" data-go="about" data-page="about">What's included</button></div>
@@ -1124,8 +1202,6 @@ function home(){
     ${resumeBanner()}
     ${dailyBanner()}
     ${todayChip()}
-    <div class="sheet" id="sheet">${sheet}</div>
-    <p class="sheetnote">Each circle is one question. The highlighted modules are the ones you've selected below.</p>
   </div></section>
 
   <section class="sect page" data-page="home"><div class="wrap">
@@ -1140,6 +1216,7 @@ function home(){
   <section class="sect page" id="setup" data-page="test"><div class="wrap">
     <div class="panel card pgcard">
       ${bandHTML('Set up your test','Choose what to take, how you want to practice, and where the questions come from.',pst('98','questions in a full test')+pst('2h 14m','of testing time')+pst('2','adaptive modules per section',true))}
+      <div class="sheetbox"><div class="sheet" id="sheet">${sheet}</div><p class="sheetnote">Each circle is one question. The highlighted modules are the ones you've selected below.</p></div>
       <div class="rowset"><div><h3>What to take</h3><p class="why">Module 2 adjusts to how you do on Module 1.</p></div>
         <div class="segs">
           <label class="seg"><input type="radio" name="sec" value="full" ${ST.cfg.sections==='full'?'checked':''}><b>Full test</b><span>4 modules · 2 h 14 min</span></label>
@@ -1618,6 +1695,46 @@ function toggleCalc(){
   }
 }
 $('#calcx').onclick=()=>setCalc(false);
+// Background: flowing contour lines that bend away from the cursor, with a soft glow that follows it.
+(function bg(){
+  const RM=matchMedia('(prefers-reduced-motion: reduce)').matches, GAPY=30, STEP=14, t0=performance.now();
+  let cv=null,cx,W=0,H=0, tx=null,ty=0, mx=0,my=0, seen=false;
+  addEventListener('mousemove',e=>{ tx=e.clientX; ty=e.clientY; if(!seen){ mx=tx; my=ty; seen=true; } },{passive:true});
+  addEventListener('touchmove',e=>{ const t=e.touches[0]; if(t){ tx=t.clientX; ty=t.clientY; if(!seen){ mx=tx; my=ty; seen=true; } } },{passive:true});
+  function setup(){ cv=document.getElementById('bgc'); if(!cv) return false; const dpr=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; cx=cv.getContext('2d'); cx.setTransform(dpr,0,0,dpr,0,0); return true; }
+  function frame(now){
+    requestAnimationFrame(frame);
+    const el=document.getElementById('bgc'); if(!el){ cv=null; return; }
+    if(el!==cv||W!==innerWidth||H!==innerHeight){ if(!setup()) return; }
+    const t=RM?0:(now-t0)/1000, dark=document.documentElement.dataset.theme==='dark';
+    // with no mouse yet (or on touch screens) the glow wanders by itself
+    const gx=tx==null?W*(.5+.3*Math.sin(t*.35)):tx+Math.sin(t*.9)*34, gy=tx==null?H*(.4+.25*Math.cos(t*.27)):ty+Math.cos(t*.7)*26;   // the glow keeps drifting even when the mouse is still
+    mx+=(gx-mx)*.1; my+=(gy-my)*.1;
+    cx.clearRect(0,0,W,H);
+    const glow=cx.createRadialGradient(mx,my,0,mx,my,Math.max(280,W*.26));
+    const pu=.88+.12*Math.sin(t*1.6); glow.addColorStop(0,dark?`rgba(110,130,255,${.22*pu})`:`rgba(58,79,240,${.13*pu})`); glow.addColorStop(.45,dark?'rgba(255,200,61,.06)':'rgba(255,200,61,.10)'); glow.addColorStop(1,'rgba(255,200,61,0)');
+    cx.fillStyle=glow; cx.fillRect(0,0,W,H);
+    const rgb=dark?'154,168,255':'58,79,240', R=150;
+    cx.lineWidth=1.4; cx.lineJoin='round';
+    for(let i=-1,n=0;i*GAPY<H+60;i++,n++){
+      const by=i*GAPY+20; let near=0; cx.beginPath();
+      for(let x=-STEP;x<=W+STEP;x+=STEP){
+        let y=by+Math.sin(x*.0075+t*.7+i*.42)*9+Math.sin(x*.0021-t*.4+i*.2)*14;
+        const dx=x-mx, dy=y-my, d2=dx*dx+dy*dy, f=Math.exp(-d2/(2*R*R));
+        if(f>.01) y+=dy/(Math.sqrt(d2)+70)*f*60;
+        const rp=Math.exp(-Math.sqrt(d2)/300); y+=Math.sin(Math.sqrt(d2)/38-t*2.6)*rp*7;   // ripples travel outward from the cursor
+        near=Math.max(near,f);
+        x===-STEP?cx.moveTo(x,y):cx.lineTo(x,y); }
+      cx.strokeStyle=`rgba(${rgb},${(dark?.15:.11)+near*.3})`; cx.stroke();
+    }
+  }
+  requestAnimationFrame(frame);
+})();
+// Shared hover tip for time bars and time cells.
+const timeTip=(lab,t,tg,st)=>{ const d=Math.round(t-tg); return [lab,fmt(t)+' ('+(Math.round(t*10)/10)+' s)','Target '+fmt(tg)+(tg?' · '+(d>0?d+' s over':-d+' s under'):''),st].join('|'); };
+(function tip(){ let el=null; const show=(e,t)=>{ if(!el){ el=document.createElement('div'); el.id='tipx'; document.body.appendChild(el); } el.innerHTML=t.split('|').map((l,i)=>i?`<div>${esc(l)}</div>`:`<b>${esc(l)}</b>`).join(''); el.style.display='block'; const w=el.offsetWidth, x=Math.min(innerWidth-w-8,e.clientX+14); el.style.left=Math.max(6,x)+'px'; el.style.top=Math.max(6,e.clientY-el.offsetHeight-12)+'px'; };
+  document.addEventListener('mousemove',e=>{ const n=e.target.closest&&e.target.closest('[data-tip]'); if(n) show(e,n.dataset.tip); else if(el) el.style.display='none'; });
+  document.addEventListener('click',e=>{ const n=e.target.closest&&e.target.closest('rect.hit'); if(n) show(e,n.dataset.tip); }); })();
 (function grip(){ const g=$('#calcgrip'), root=document.documentElement; let on=false;
   const clamp=w=>Math.max(300,Math.min(Math.round(innerWidth*.6),Math.round(w)));
   root.style.setProperty('--calc-w',clamp(+ld('satCalcW',460)||460)+'px');
@@ -1695,17 +1812,25 @@ function allReasonsHTML(){
 function rsChips(q){ const t=ld(TG,{})[q.id]; return `<div class="rsn"><b>Why did you miss it?</b><div class="rsrow">${REASONS.map(r=>`<button class="rsc ${t===r[0]?'on':''}" data-rs="${r[0]}" type="button">${r[1]}</button>`).join('')}</div></div>`; }
 function recordResults(){
   const all=ST.results; if(!all.length) return;
-  let n=0,c=0,tm=0,demo=false; const sks=ld(SKK,{}), seen=ld(SEENK,{});
+  let n=0,c=0,tm=0,demo=false; const sks=ld(SKK,{}), seen=ld(SEENK,{}), pl=ld(PLK,null), pw=pl?Math.max(0,Math.floor((Date.now()-pl.start)/(7*864e5))):0;
   all.forEach(r=>r.qs.forEach((q,i)=>{
     n++; const ok=isCorrect(q,r.ans[i]); if(ok) c++; tm+=(r.qtime[i]||0)/1000;
     const isDemo=/^demo|^imp/.test(q.id)||q.fallback; if(isDemo) demo=true;
     const av=r.ans[i]; if(!isDemo&&av!==undefined&&av!==null&&av!=='') seen[q.id]=[Date.now(),ok?1:0];
-    if(q.sk&&!isDemo&&av!==undefined&&av!==null&&av!==''){ const o=sks[q.sk]=sks[q.sk]||{n:0,miss:0}; o.n++; if(!ok) o.miss++; }
+    if(q.sk&&!isDemo&&av!==undefined&&av!==null&&av!==''){ const o=sks[q.sk]=sks[q.sk]||{n:0,miss:0}; o.n++; if(!ok) o.miss++; if(pl){ const wk=(pl.wk=pl.wk||{}), w=wk[pw]=wk[pw]||{}, e=w[q.sk]=w[q.sk]||[0,0]; e[0]++; if(ok) e[1]++; } }
   }));
+  if(pl) sv(PLK,pl);
   sv(SKK,sks); saveMissed(all); sv(SEENK,trimSeen(seen)); ST._seen=null; addDaily(c);
   const er=estSection('rw'), em=estSection('math'), f=all[0].m;
   const kind=f.daily?"Today's session":f.retry?(f.nb?'Mistake notebook':'Retry'):f.quick?'Quick practice · '+SPEC[f.sec].name:(ST.cfg.sections==='full'?'Full test':SPEC[ST.cfg.sections].name);
-  const h=ld(HK,[]); h.push({t:Date.now(),kind,n,c,avg:Math.round(tm/n),total:(er&&em)?er.score+em.score:null,rw:er?er.score:null,math:em?em.score:null,demo});
+  const t0=Date.now();
+  try{ const rv=ld(RVK,[]), qb=ld(QBK,{}), slim=q=>{ const o={}; Object.keys(q).forEach(k=>{ if(k!=='meta'&&k!=='raw') o[k]=q[k]; }); return JSON.parse(JSON.stringify(o).replace(/data:image\/[^"'\\)]{1500,}/g,'')); };
+    all.forEach(r=>r.qs.forEach(q=>{ if(q.id&&!qb[q.id]) qb[q.id]=slim(q); }));
+    rv.push({t:t0,v:2,mods:all.map(r=>({name:r.m.label||'',sec:r.m.sec,n:r.m.n||0,quick:!!r.m.quick,retry:!!r.m.retry,nb:!!r.m.nb,qs:r.qs.map((q,i)=>{ const a=r.ans[i], om=a===undefined||a===null||a===''; return {id:q.id,a:om?'':a,f:r.flag&&r.flag[i]?1:0,sk:q.sk||'',d:q.diff||'M',ok:om?null:(isCorrect(q,a)?1:0),t:Math.round((r.qtime[i]||0)/100)/10,tg:Math.round(r.tgs[i]||0)}; })}))});
+    let keep=rv.slice(-12);
+    for(;;){ const used=new Set(); keep.forEach(x=>x.mods.forEach(m=>m.qs.forEach(q=>used.add(q.id)))); const bank={}; Object.keys(qb).forEach(k=>{ if(used.has(k)) bank[k]=qb[k]; });
+      try{ localStorage.setItem(RVK,JSON.stringify(keep)); localStorage.setItem(QBK,JSON.stringify(bank)); break; }catch(e){ if(keep.length<=1) break; keep=keep.slice(1); } } }catch(e){}
+  const h=ld(HK,[]); h.push({t:t0,kind,n,c,avg:Math.round(tm/n),total:(er&&em)?er.score+em.score:null,rw:er?er.score:null,math:em?em.score:null,demo});
   sv(HK,h.slice(-30));
 }
 async function finishModule(timeUp){
@@ -1803,7 +1928,7 @@ function tipCol(sec){
   return `<div class="panel tipcol"><h3>${SPEC[sec].name}</h3><p class="sub2">${top.length?'Your top '+top.length+' area'+(top.length>1?'s':'')+' to improve':'Nothing to fix here'}</p>${body}${prac}</div>`;
 }
 function paceChart(all){
-  const mods=all.map(r=>r.qs.map((q,i)=>{ const a=r.ans[i]; return {t:(r.qtime[i]||0)/1000,tg:r.tgs[i],ok:isCorrect(q,a),none:a===undefined||a==='',lab:`Question ${i+1}${q.skillName?' · '+q.skillName:''}`}; }));
+  const mods=all.map(r=>r.qs.map((q,i)=>{ const a=r.ans[i]; return {t:(r.qtime[i]||0)/1000,tg:r.tgs[i],ok:r.okx?r.okx[i]:isCorrect(q,a),none:a===undefined||a==='',lab:`Question ${i+1}${q.skillName?' · '+q.skillName:''}`}; }));
   const N=mods.reduce((a,m)=>a+m.length,0), gap=14, W=900, H=210, L=42, R=8, T=12, B=36;
   const sw=(W-L-R-(mods.length-1)*gap)/N, bw=Math.min(28,Math.max(3,sw*.7));
   const mx=Math.max(60,...mods.flat().map(b=>Math.max(b.t,b.tg)))*1.08, y=v=>T+(1-v/mx)*(H-T-B), step=mx>300?120:60;
@@ -1811,7 +1936,7 @@ function paceChart(all){
   let x0=L, bars='', labs='';
   mods.forEach((m,mi)=>{
     m.forEach((b,i)=>{ const x=x0+i*sw+(sw-bw)/2, col=b.none?'#b9c1dd':b.ok?'#0f9d7a':'#d93a50';
-      bars+=`<rect x="${x.toFixed(1)}" y="${y(b.t).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1.5,(H-B)-y(b.t)).toFixed(1)}" rx="2" fill="${col}"><title>${esc(b.lab)} · ${fmt(b.t)} of ${fmt(b.tg)} · ${b.none?'Blank':b.ok?'Correct':'Wrong'}</title></rect><line x1="${(x-1.5).toFixed(1)}" x2="${(x+bw+1.5).toFixed(1)}" y1="${y(b.tg).toFixed(1)}" y2="${y(b.tg).toFixed(1)}" class="tg" stroke-width="2"/>`; });
+      bars+=`<rect x="${x.toFixed(1)}" y="${y(b.t).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1.5,(H-B)-y(b.t)).toFixed(1)}" rx="2" fill="${col}"></rect><rect class="hit" x="${(x0+i*sw).toFixed(1)}" y="${T}" width="${sw.toFixed(1)}" height="${H-T-B}" data-tip="${esc(timeTip(b.lab,b.t,b.tg,b.none?'Omitted':b.ok?'Correct':'Wrong'))}"/><line x1="${(x-1.5).toFixed(1)}" x2="${(x+bw+1.5).toFixed(1)}" y1="${y(b.tg).toFixed(1)}" y2="${y(b.tg).toFixed(1)}" class="tg" stroke-width="2"/>`; });
     const mm=all[mi].m, lab=mm.quick?'Quick practice':mm.retry?(mm.nb?'Mistake notebook':'Retry'):(mm.sec==='rw'?'Reading and Writing ':'Math ')+mm.n;
     labs+=`<text class="ax" x="${(x0+m.length*sw/2).toFixed(1)}" y="${H-12}" text-anchor="middle">${esc(lab)}</text>`; x0+=m.length*sw+gap;
   });
@@ -1829,14 +1954,14 @@ function paceInsights(all){
   if(slow>=2) c.push({n:slow,t:'Right but slow',d:`${slow} correct answers took more than 1.5 times the target. Practice those skills with a timer to build speed.`});
   return c.slice(0,3);
 }
-function openReview(kind){
-  const list=[];
-  ST.results.forEach((r,ri)=>r.qs.forEach((q,i)=>{ const a=r.ans[i], t=(r.qtime[i]||0)/1000;
+function openReview(kind,src,at){
+  const RS=src||ST.results, list=[];
+  RS.forEach((r,ri)=>r.qs.forEach((q,i)=>{ const a=r.ans[i], t=(r.qtime[i]||0)/1000;
     if(kind==='all'||(kind==='missed'&&!isCorrect(q,a))||(kind==='flagged'&&r.flag[i])||(kind==='slow'&&t>r.tgs[i])) list.push([ri,i]); }));
   if(!list.length) return;
-  let pos=0; const d=modal('<div></div>'), box=d.querySelector('.modal'); box.style.maxWidth='880px';
+  let pos=Math.max(0,at?list.findIndex(x=>x[0]===at[0]&&x[1]===at[1]):0); const d=modal('<div></div>'), box=d.querySelector('.modal'); box.style.maxWidth='880px';
   const draw=keep=>{ const sc0=box.scrollTop;
-    const [ri,i]=list[pos], r=ST.results[ri], q=r.qs[i], a=r.ans[i], ok=isCorrect(q,a), none=(a===undefined||a===''), t=(r.qtime[i]||0)/1000, tg=r.tgs[i], tp=q.sk&&TIPS[q.sk];
+    const [ri,i]=list[pos], r=RS[ri], q=r.qs[i], a=r.ans[i], ok=isCorrect(q,a), none=(a===undefined||a===''), t=(r.qtime[i]||0)/1000, tg=r.tgs[i], tp=q.sk&&TIPS[q.sk];
     box.innerHTML=`<div class="rvtop"><div><b>${pos+1} of ${list.length}</b> <span class="muted">· ${esc(r.m.label)} · Question ${i+1}${q.skillName?' · '+esc(q.skillName):''}</span></div><span class="pill ${none?'na':ok?'ok':'no'}">${none?'Blank':ok?'Correct':'Wrong'}</span></div>
       ${q.stimulus?`<div class="stim" style="margin:14px 0">${q.stimulus}</div>`:''}<div class="stem" style="margin:14px 0">${q.stem}</div>
       ${q.type==='mcq'?q.options.map((o,k)=>`<div class="opt ${q.correct.includes(k)?'right':(a===k?'wrong':'')}"><div class="box"><span class="let">${'ABCD'[k]}</span><span>${o}</span></div></div>`).join(''):`<p>Your answer: <b>${esc(none?'none':a)}</b></p>`}
@@ -1877,7 +2002,7 @@ function results(){
     ${r.qs.map((q,i)=>{ const a=r.ans[i], ok=isCorrect(q,a), t=(r.qtime[i]||0)/1000, none=(a===undefined||a==='');
       return `<tr data-rv="${ri}-${i}"><td>${i+1}${r.flag[i]?' ⚑':''}</td><td>${esc(SPEC[r.m.sec].domNames[q.domain]||q.domain)}</td><td>${esc(q.skillName||'—')}</td><td>${{E:'Easy',M:'Medium',H:'Hard'}[q.diff]||''}</td>
       <td><span class="pill ${none?'na':ok?'ok':'no'}">${none?'Omitted':ok?'Correct':'Wrong'}</span></td><td>${none?'—':(q.type==='mcq'?'ABCD'[a]:esc(a))}</td><td>${esc(answerText(q))}</td>
-      <td class="${t>r.tgs[i]?'over':''}">${fmt(t)} <span class="muted">/ ${fmt(r.tgs[i])}</span></td></tr>`; }).join('')}</table></div>`).join('');
+      <td class="${t>r.tgs[i]?'over':''}" data-tip="${esc(timeTip('Question '+(i+1),t,r.tgs[i],none?'Omitted':ok?'Correct':'Wrong'))}">${fmt(t)} <span class="muted">/ ${fmt(r.tgs[i])}</span></td></tr>`; }).join('')}</table></div>`).join('');
   const secs=['rw','math'].filter(x=>all.some(r=>r.m.sec===x));
   const skAll=secs.flatMap(skillStats).filter(o=>SKN[o.k]).sort((a,b)=>b.n-a.n).slice(0,7);
   const skBars=(!er&&!em&&skAll.length)?`<div class="lbl sk">Accuracy by skill</div>`+skAll.map(o=>`<div class="skr"><div class="sbh"><span>${esc(o.name)}</span><b>${o.n-o.miss}/${o.n}</b></div><div class="track"><i class="fill" style="width:0" data-w="${Math.round((o.n-o.miss)/o.n*100)}"></i></div></div>`).join(''):'';
@@ -1892,7 +2017,7 @@ function results(){
     +(ST.dropped?`<div class="aside rnote">${ST.dropped} question(s) from the bank came back in an unexpected format and were swapped for others. The reason is saved in the skipped-question report on the home screen.</div>`:'')
     +(tot||one?`<div class="aside rnote">The score is a rough estimate. It weights each question by difficulty and accounts for an easier or harder Module 2, but the real exam uses a confidential scoring curve. Expect about 30 points either way per section.</div>`:'');
   const pace=tq&&over/tq>.25?`<div class="aside" style="margin-top:22px"><b>Pacing:</b> you went over your time target on ${over} of ${tq} questions (${Math.round(over/tq*100)}%). Practice the skills above with a timer on, and move on from any question that runs past its target.</div>`:'';
-  app.innerHTML=`<div class="site" id="site">
+  app.innerHTML=`<div class="site" id="site"><canvas id="bgc" aria-hidden="true"></canvas>
   <nav class="nav"><div class="wrap"><div class="brand"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#0d1636"/><circle cx="9" cy="9" r="3.2" fill="#ffc83d"/><circle cx="19" cy="9" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="19" cy="19" r="3.2" fill="#fff"/></svg>SAT Simulator</div>
   <button class="lnk thm" id="theme" type="button"></button><button class="sbtn sm line" id="prt" type="button">Print report</button><button class="sbtn sm" id="again">New test</button></div></nav>
   <main>
