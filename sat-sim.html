@@ -1695,37 +1695,53 @@ function toggleCalc(){
   }
 }
 $('#calcx').onclick=()=>setCalc(false);
-// Background: flowing contour lines that bend away from the cursor, with a soft glow that follows it.
+// Background: flowing lines on a water surface. The cursor pushes the water, and waves spread, bounce and fade like real ripples.
 (function bg(){
-  const RM=matchMedia('(prefers-reduced-motion: reduce)').matches, GAPY=30, STEP=14, t0=performance.now();
-  let cv=null,cx,W=0,H=0, tx=null,ty=0, mx=0,my=0, seen=false;
-  addEventListener('mousemove',e=>{ tx=e.clientX; ty=e.clientY; if(!seen){ mx=tx; my=ty; seen=true; } },{passive:true});
-  addEventListener('touchmove',e=>{ const t=e.touches[0]; if(t){ tx=t.clientX; ty=t.clientY; if(!seen){ mx=tx; my=ty; seen=true; } } },{passive:true});
-  function setup(){ cv=document.getElementById('bgc'); if(!cv) return false; const dpr=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; cx=cv.getContext('2d'); cx.setTransform(dpr,0,0,dpr,0,0); return true; }
+  const RM=matchMedia('(prefers-reduced-motion: reduce)').matches, GAPY=30, STEP=12, CG=12;   // reduced motion calms the ambient waves but keeps the water reacting
+  let cv=null,cx,W=0,H=0, gw=0,gh=0, A=null,B=null, tx=null,ty=0, mx=0,my=0, seen=false, T=0, prev=0, lastX=0, lastY=0;
+  function setup(){ cv=document.getElementById('bgc'); if(!cv) return false; const dpr=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; cx=cv.getContext('2d'); cx.setTransform(dpr,0,0,dpr,0,0);
+    gw=Math.ceil(W/CG)+3; gh=Math.ceil(H/CG)+3; A=new Float32Array(gw*gh); B=new Float32Array(gw*gh); return true; }
+  // push the surface down around (x,y); k is the strength
+  function poke(x,y,k,r){ if(!A) return; const gx=x/CG+1, gy=y/CG+1, R=Math.ceil(r*2.2);
+    for(let j=-R;j<=R;j++)for(let i=-R;i<=R;i++){ const ix=Math.round(gx)+i, iy=Math.round(gy)+j; if(ix<1||iy<1||ix>=gw-1||iy>=gh-1) continue;
+      const d2=(ix-gx)*(ix-gx)+(iy-gy)*(iy-gy); A[iy*gw+ix]-=k*Math.exp(-d2/(2*r*r)); } }
+  const move=e=>{ tx=e.clientX; ty=e.clientY; if(!seen){ mx=tx; my=ty; seen=true; lastX=tx; lastY=ty; return; }
+    const dx=tx-lastX, dy=ty-lastY, d=Math.hypot(dx,dy); if(d<2) return;
+    const n=Math.max(1,Math.ceil(d/CG)), k=Math.min(3.2,.8+d*.06);   // a faster hand pushes harder; points along the path keep the wake continuous
+    for(let i=1;i<=n;i++) poke(lastX+dx*i/n,lastY+dy*i/n,k/n*1.4,1.8);
+    lastX=tx; lastY=ty; };
+  addEventListener('pointermove',move,{passive:true});
+  addEventListener('touchmove',e=>{ const t=e.touches[0]; if(t) move(t); },{passive:true});
+  addEventListener('pointerdown',e=>{ tx=e.clientX; ty=e.clientY; if(!seen){ mx=tx; my=ty; seen=true; } lastX=tx; lastY=ty; poke(tx,ty,9,2.8); },{passive:true});
+  function step(){   // 2D wave equation with damping
+    const c2=.27, damp=.984; for(let j=1;j<gh-1;j++){ let o=j*gw+1; for(let i=1;i<gw-1;i++,o++){
+      B[o]=(2*A[o]-B[o]+c2*(A[o-1]+A[o+1]+A[o-gw]+A[o+gw]-4*A[o]))*damp; } }
+    const t=A; A=B; B=t; }
+  const hAt=(x,y)=>{ const fx=x/CG+1, fy=y/CG+1, i=Math.floor(fx), j=Math.floor(fy); if(i<0||j<0||i>=gw-1||j>=gh-1) return 0; const u=fx-i, v=fy-j, o=j*gw+i;
+    return (A[o]*(1-u)+A[o+1]*u)*(1-v)+(A[o+gw]*(1-u)+A[o+gw+1]*u)*v; };
   function frame(now){
     requestAnimationFrame(frame);
     const el=document.getElementById('bgc'); if(!el){ cv=null; return; }
     if(el!==cv||W!==innerWidth||H!==innerHeight){ if(!setup()) return; }
-    const t=RM?0:(now-t0)/1000, dark=document.documentElement.dataset.theme==='dark';
-    // with no mouse yet (or on touch screens) the glow wanders by itself
-    const gx=tx==null?W*(.5+.3*Math.sin(t*.35)):tx+Math.sin(t*.9)*34, gy=tx==null?H*(.4+.25*Math.cos(t*.27)):ty+Math.cos(t*.7)*26;   // the glow keeps drifting even when the mouse is still
+    const dt=Math.min(.1,(now-(prev||now))/1000); T+=dt*(RM?.35:1); prev=now;
+    for(let k=Math.max(1,Math.min(3,Math.round(dt*60)));k>0;k--) step();
+    const t=T, dark=document.documentElement.dataset.theme==='dark';
+    // with no pointer yet (touch screens before the first touch) a gentle drift disturbs the water on its own
+    const idle=tx==null; if(idle){ const ix=W*(.5+.32*Math.sin(t*.5)), iy=H*(.45+.25*Math.cos(t*.37)); if(Math.random()<.35) poke(ix,iy,1.1,1.8); }
+    const gx=idle?W*(.5+.3*Math.sin(t*.35)):tx+Math.sin(t*.9)*34, gy=idle?H*(.4+.25*Math.cos(t*.27)):ty+Math.cos(t*.7)*26;
     mx+=(gx-mx)*.1; my+=(gy-my)*.1;
     cx.clearRect(0,0,W,H);
-    const glow=cx.createRadialGradient(mx,my,0,mx,my,Math.max(280,W*.26));
-    const pu=.88+.12*Math.sin(t*1.6); glow.addColorStop(0,dark?`rgba(110,130,255,${.22*pu})`:`rgba(58,79,240,${.13*pu})`); glow.addColorStop(.45,dark?'rgba(255,200,61,.06)':'rgba(255,200,61,.10)'); glow.addColorStop(1,'rgba(255,200,61,0)');
+    const glow=cx.createRadialGradient(mx,my,0,mx,my,Math.max(280,W*.26)), pu=.88+.12*Math.sin(t*1.6);
+    glow.addColorStop(0,dark?`rgba(110,130,255,${.14*pu})`:`rgba(58,79,240,${.08*pu})`); glow.addColorStop(.45,dark?'rgba(255,200,61,.04)':'rgba(255,200,61,.06)'); glow.addColorStop(1,'rgba(255,200,61,0)');
     cx.fillStyle=glow; cx.fillRect(0,0,W,H);
-    const rgb=dark?'154,168,255':'58,79,240', R=150;
-    cx.lineWidth=1.4; cx.lineJoin='round';
-    for(let i=-1,n=0;i*GAPY<H+60;i++,n++){
-      const by=i*GAPY+20; let near=0; cx.beginPath();
-      for(let x=-STEP;x<=W+STEP;x+=STEP){
-        let y=by+Math.sin(x*.0075+t*.7+i*.42)*9+Math.sin(x*.0021-t*.4+i*.2)*14;
-        const dx=x-mx, dy=y-my, d2=dx*dx+dy*dy, f=Math.exp(-d2/(2*R*R));
-        if(f>.01) y+=dy/(Math.sqrt(d2)+70)*f*60;
-        const rp=Math.exp(-Math.sqrt(d2)/300); y+=Math.sin(Math.sqrt(d2)/38-t*2.6)*rp*7;   // ripples travel outward from the cursor
-        near=Math.max(near,f);
-        x===-STEP?cx.moveTo(x,y):cx.lineTo(x,y); }
-      cx.strokeStyle=`rgba(${rgb},${(dark?.15:.11)+near*.3})`; cx.stroke();
+    const rgb=dark?'154,168,255':'58,79,240'; cx.lineWidth=1.4; cx.lineJoin='round';
+    for(let i=-1;i*GAPY<H+60;i++){
+      const by=i*GAPY+20; let hm=0; cx.beginPath();
+      for(let x=-STEP,first=true;x<=W+STEP;x+=STEP){
+        let y=by+Math.sin(x*.0075+t*.7+i*.42)*5+Math.sin(x*.0021-t*.4+i*.2)*8;
+        const h=hAt(x,y); y+=Math.max(-12,Math.min(12,h*.7)); hm=Math.max(hm,Math.abs(h));
+        if(first){ cx.moveTo(x,y); first=false; } else cx.lineTo(x,y); }
+      cx.strokeStyle=`rgba(${rgb},${(dark?.12:.085)+Math.min(.14,hm*.03)})`; cx.stroke();
     }
   }
   requestAnimationFrame(frame);
